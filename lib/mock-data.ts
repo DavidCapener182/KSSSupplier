@@ -68,7 +68,7 @@ interface MockDataStore {
   addDocumentComment: (comment: Omit<DocumentComment, 'id' | 'created_at'>) => DocumentComment | Promise<DocumentComment>;
   getDocumentComments: (documentId: string) => DocumentComment[];
   uploadInvoice: (invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>, adminEmail?: string) => Invoice;
-  updateInvoiceStatus: (id: string, status: Invoice['status'], paymentDate?: string) => void;
+  updateInvoiceStatus: (id: string, status: Invoice['status'], paymentDate?: string) => Promise<void>;
   getInvoicesByProvider: (providerId: string) => Invoice[];
   getInvoicesByEvent: (eventId: string) => Invoice[];
   // Event Template actions
@@ -93,9 +93,9 @@ interface MockDataStore {
   createOnboardingDocument: (doc: Omit<OnboardingDocument, 'id' | 'created_at' | 'updated_at'>) => OnboardingDocument;
   completeOnboardingDocument: (id: string, signature?: string, signedName?: string) => void;
   isProviderOnboarded: (providerId: string) => boolean;
-  updateProviderDetails: (id: string, details: Partial<Provider>) => void;
-  approveProvider: (id: string) => void;
-  rejectProvider: (id: string, reason?: string) => void;
+  updateProviderDetails: (id: string, details: Partial<Provider>) => Promise<void>;
+  approveProvider: (id: string) => Promise<void>;
+  rejectProvider: (id: string, reason?: string) => Promise<void>;
   getPendingProviders: () => Provider[];
   // Availability
   loadProviderAvailability: (providerId: string) => Promise<void>;
@@ -605,7 +605,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     return newInvoice;
   },
 
-  updateInvoiceStatus: (id, status, paymentDate) => {
+  updateInvoiceStatus: async (id, status, paymentDate) => {
     set((state) => ({
       invoices: state.invoices.map((invoice) =>
         invoice.id === id
@@ -825,7 +825,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     return provider.status === 'approved';
   },
 
-  updateProviderDetails: (id, details) => {
+  updateProviderDetails: async (id, details) => {
     set((state) => ({
       providers: state.providers.map((provider) =>
         provider.id === id
@@ -839,7 +839,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     }));
   },
 
-  approveProvider: (id) => {
+  approveProvider: async (id) => {
     set((state) => {
       const provider = state.providers.find((p) => p.id === id);
       if (provider) {
@@ -874,7 +874,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     });
   },
 
-  rejectProvider: (id, reason) => {
+  rejectProvider: async (id, reason) => {
     set((state) => {
       const provider = state.providers.find((p) => p.id === id);
       if (provider) {
