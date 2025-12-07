@@ -45,7 +45,7 @@ interface MockDataStore {
   loadProviders: () => Promise<void>;
   loadInvoices: () => Promise<void>;
   createEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at'>) => Event;
-  updateEvent: (id: string, updates: Partial<Event>) => void;
+  updateEvent: (id: string, updates: Partial<Event>) => Promise<Event>;
   deleteEvent: (id: string) => void;
   createAssignment: (assignment: Omit<Assignment, 'id'>) => Assignment;
   updateAssignment: (id: string, updates: Partial<Assignment>) => void;
@@ -275,27 +275,35 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     return newEvent;
   },
 
-  updateEvent: (id, updates) => {
-    set((state) => {
-      const user = state.currentUser;
-      const event = state.events.find((e) => e.id === id);
-      if (user && event) {
-        get().addActivityLog({
-          user_id: user.id,
-          action: 'updated',
-          entity_type: 'event',
-          entity_id: id,
-          details: { changes: updates, previous_name: event.name },
-        });
-      }
-      return {
-        events: state.events.map((event) =>
-          event.id === id
-            ? { ...event, ...updates, updated_at: new Date().toISOString() }
-            : event
-        ),
-      };
-    });
+  updateEvent: async (id, updates) => {
+    const state = get();
+    const event = state.events.find((e) => e.id === id);
+    if (!event) {
+      throw new Error(`Event with id ${id} not found`);
+    }
+    
+    const user = state.currentUser;
+    if (user) {
+      get().addActivityLog({
+        user_id: user.id,
+        action: 'updated',
+        entity_type: 'event',
+        entity_id: id,
+        details: { changes: updates, previous_name: event.name },
+      });
+    }
+    
+    const updatedEvent: Event = {
+      ...event,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    
+    set((state) => ({
+      events: state.events.map((e) => (e.id === id ? updatedEvent : e)),
+    }));
+    
+    return updatedEvent;
   },
 
   deleteEvent: (id) => {
