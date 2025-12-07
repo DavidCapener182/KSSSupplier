@@ -76,7 +76,7 @@ export function AssignmentRow({ assignment, provider, onRequestDetails, onViewDe
         {getStatusBadge()}
       </div>
 
-      <div className="grid grid-cols-4 gap-4 text-sm">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
         <div>
           <span className="text-gray-600">Managers:</span>
           <span className="ml-2 font-medium">{assignment.assigned_managers}</span>
@@ -122,33 +122,39 @@ export function AssignmentRow({ assignment, provider, onRequestDetails, onViewDe
             )}
           </div>
         )}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
           {assignment.status === 'accepted' && !assignment.details_requested && (
             <Button
               variant="outline"
               size="sm"
+              className="flex-shrink-0"
               onClick={() => onRequestDetails(assignment.id)}
             >
-              Request PNC/SIA Details
+              <span className="hidden sm:inline">Request PNC/SIA Details</span>
+              <span className="sm:hidden">Request Details</span>
             </Button>
           )}
           {assignment.status === 'accepted' && assignment.details_requested && hasStaffDetailsUploaded && (
             <Button
               variant="outline"
               size="sm"
+              className="flex-shrink-0"
               onClick={() => onViewDetails ? onViewDetails(assignment.id) : undefined}
             >
-              View PNC/SIA Details
+              <span className="hidden sm:inline">View PNC/SIA Details</span>
+              <span className="sm:hidden">View Details</span>
             </Button>
           )}
           {assignment.status === 'accepted' && onSendTimes && (
             <Button
               variant="outline"
               size="sm"
+              className="flex-shrink-0"
               onClick={() => onSendTimes(assignment)}
             >
               <Clock className="h-4 w-4 mr-1" />
-              {assignment.times_sent ? 'Update Times' : 'Send Times'}
+              <span className="hidden sm:inline">{assignment.times_sent ? 'Update Times' : 'Send Times'}</span>
+              <span className="sm:hidden">{assignment.times_sent ? 'Update' : 'Send'}</span>
             </Button>
           )}
           {assignment.status === 'accepted' && onConfirmTimesheets && !assignment.timesheets_confirmed && (() => {
@@ -158,11 +164,12 @@ export function AssignmentRow({ assignment, provider, onRequestDetails, onViewDe
               <Button
                 variant="default" 
                 size="sm"
+                className="flex-shrink-0 bg-green-600 hover:bg-green-700"
                 onClick={() => onConfirmTimesheets(assignment)}
-                className="bg-green-600 hover:bg-green-700"
               >
                 <FileCheck className="h-4 w-4 mr-1" />
-                Confirm Timesheets
+                <span className="hidden sm:inline">Confirm Timesheets</span>
+                <span className="sm:hidden">Confirm</span>
               </Button>
             ) : null;
           })()}
@@ -170,6 +177,7 @@ export function AssignmentRow({ assignment, provider, onRequestDetails, onViewDe
             <Button
               variant="outline"
               size="sm"
+              className="flex-shrink-0"
               onClick={() => onEdit(assignment)}
               aria-label={`Edit assignment for ${provider.company_name}`}
             >
@@ -180,6 +188,7 @@ export function AssignmentRow({ assignment, provider, onRequestDetails, onViewDe
             <Button
               variant="destructive"
               size="sm"
+              className="flex-shrink-0"
               onClick={() => onDelete(assignment.id)}
               aria-label={`Delete assignment for ${provider.company_name}`}
             >

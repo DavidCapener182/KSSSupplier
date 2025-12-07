@@ -951,7 +951,7 @@ export default function EventDetailPage() {
           { label: event.name },
         ]}
       />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center space-x-4">
           <Link href="/admin/events">
             <Button variant="ghost" size="icon">
@@ -959,15 +959,17 @@ export default function EventDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">{event.name}</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold">{event.name}</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
               {format(new Date(event.date), 'MMMM dd, yyyy')} • {event.location}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
+            size="sm"
+            className="flex-shrink-0"
             onClick={() => {
               if (event) {
                 // Collect all staff details for this event
@@ -984,27 +986,31 @@ export default function EventDetailPage() {
             }}
           >
             <Download className="h-4 w-4 mr-2" />
-            Export PDF
+            <span className="hidden sm:inline">Export PDF</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
           <Link href={`/reports/pnc/${id}`} target="_blank">
-            <Button variant="outline">
+            <Button variant="outline" size="sm" className="flex-shrink-0">
               <FileBarChart className="h-4 w-4 mr-2" />
-              View Report
+              <span className="hidden sm:inline">View Report</span>
+              <span className="sm:hidden">Report</span>
             </Button>
           </Link>
           <Button
             variant="outline"
+            size="sm"
+            className="flex-shrink-0 print-keep"
             onClick={() => window.print()}
-            className="print-keep"
           >
             <Printer className="h-4 w-4 mr-2" />
             Print
           </Button>
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" size="sm" className="flex-shrink-0">
                 <Edit className="h-4 w-4 mr-2" />
-                Edit Event
+                <span className="hidden sm:inline">Edit Event</span>
+                <span className="sm:hidden">Edit</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
@@ -1089,9 +1095,10 @@ export default function EventDetailPage() {
           </Dialog>
           <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive">
+              <Button variant="destructive" size="sm" className="flex-shrink-0">
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete Event
+                <span className="hidden sm:inline">Delete Event</span>
+                <span className="sm:hidden">Delete</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -1113,8 +1120,8 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="assignments" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="assignments" className="space-y-4 md:space-y-6">
+        <TabsList className="w-full overflow-x-auto">
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="staff">Staff</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -1122,7 +1129,7 @@ export default function EventDetailPage() {
           <TabsTrigger value="invoice">Invoice</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="assignments" className="space-y-4">
+        <TabsContent value="assignments" className="space-y-4 md:space-y-6">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -1386,7 +1393,7 @@ export default function EventDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="staff" className="space-y-4">
+        <TabsContent value="staff" className="space-y-4 md:space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Event Staff</CardTitle>
@@ -1458,7 +1465,7 @@ export default function EventDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="documents" className="space-y-4">
+        <TabsContent value="documents" className="space-y-4 md:space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Documents</CardTitle>
@@ -1541,7 +1548,7 @@ export default function EventDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="kpis" className="space-y-4">
+        <TabsContent value="kpis" className="space-y-4 md:space-y-6">
           {eventAssignments.filter((a) => a.status === 'accepted' && a.actual_managers !== null).length > 0 && (
             <>
               <div className="grid gap-4 md:grid-cols-2">
@@ -1641,7 +1648,7 @@ export default function EventDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="invoice" className="space-y-4">
+        <TabsContent value="invoice" className="space-y-4 md:space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Generate Invoice</CardTitle>

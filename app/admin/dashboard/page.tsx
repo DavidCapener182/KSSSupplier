@@ -349,7 +349,7 @@ export default function AdminDashboard() {
         ) : (
           <>
             <Link href="/admin/events" className="block">
-              <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card relative overflow-hidden group cursor-pointer">
+              <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card relative overflow-hidden group cursor-pointer h-full flex flex-col">
                 <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-blue-50 dark:from-blue-900/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Total Events</CardTitle>
@@ -357,7 +357,7 @@ export default function AdminDashboard() {
                     <Calendar className="h-4 w-4" />
                   </div>
                 </CardHeader>
-                <CardContent className="relative z-10">
+                <CardContent className="relative z-10 flex-1 flex flex-col justify-between">
                   <div className="text-3xl font-bold text-foreground">{totalEvents}</div>
                   <p className="text-xs text-muted-foreground mt-1 flex items-center">
                     <span className="text-blue-600 dark:text-blue-400 font-medium mr-1">2026</span> season
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
               </Card>
             </Link>
 
-            <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card relative overflow-hidden group">
+            <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card relative overflow-hidden group h-full flex flex-col">
               <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-amber-50 dark:from-amber-900/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Pending Actions</CardTitle>
@@ -374,7 +374,7 @@ export default function AdminDashboard() {
                   <Clock className="h-4 w-4" />
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10">
+              <CardContent className="relative z-10 flex-1 flex flex-col justify-between">
                 <div className="text-3xl font-bold text-foreground">{pendingConfirmations}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Awaiting provider response
@@ -382,7 +382,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card relative overflow-hidden group">
+            <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card relative overflow-hidden group h-full flex flex-col">
               <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-green-50 dark:from-green-900/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Confirmed</CardTitle>
@@ -390,7 +390,7 @@ export default function AdminDashboard() {
                   <CheckCircle className="h-4 w-4" />
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10">
+              <CardContent className="relative z-10 flex-1 flex flex-col justify-between">
                 <div className="text-3xl font-bold text-foreground">{confirmedAssignments}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Accepted assignments
@@ -399,7 +399,7 @@ export default function AdminDashboard() {
             </Card>
 
             <Link href="/admin/providers" className="block">
-              <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card relative overflow-hidden group cursor-pointer">
+              <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card relative overflow-hidden group cursor-pointer h-full flex flex-col">
                 <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-purple-50 dark:from-purple-900/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Providers</CardTitle>
@@ -407,7 +407,7 @@ export default function AdminDashboard() {
                     <Users className="h-4 w-4" />
                   </div>
                 </CardHeader>
-                <CardContent className="relative z-10">
+                <CardContent className="relative z-10 flex-1 flex flex-col justify-between">
                   <div className="text-3xl font-bold text-foreground">{totalProviders}</div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Active partners

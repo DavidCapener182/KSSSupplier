@@ -203,7 +203,7 @@ export function Navbar() {
                   </div>
                 </div>
               </div>
-              <Link href={user.role === 'admin' ? '/admin/settings' : '/provider/settings'}>
+              <Link href={user.role === 'admin' ? '/admin/settings' : '/provider/settings'} className="hidden md:block">
                 <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 text-xs md:text-sm" aria-label="Settings">
                   <Settings className="h-4 w-4 md:mr-2" />
                   <span className="hidden md:inline">Settings</span>
