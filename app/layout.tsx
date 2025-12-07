@@ -19,6 +19,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                // Always start with light mode, then apply user preference after React loads
+                document.documentElement.classList.remove('dark');
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={montserrat.className}>
         <TooltipProvider>
           <AuthProvider>

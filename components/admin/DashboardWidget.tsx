@@ -48,11 +48,11 @@ export const UpcomingEventsWidget = forwardRef<HTMLDivElement, UpcomingEventsWid
     const upcoming = events
       .filter((e) => new Date(e.date) >= new Date())
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 10);
+      .slice(0, 3);
 
     return (
       <>
-        <DashboardWidget ref={ref} title="Upcoming Events" description="Next 10 events on the schedule" className={className}>
+        <DashboardWidget ref={ref} title="Upcoming Events" description="Next 3 events on the schedule" className={className}>
         <div className="flex h-full flex-col gap-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {upcoming.map((event) => {

@@ -6,9 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, CheckCircle, Clock, HelpCircle, AlertCircle, ArrowUpRight, Mail, FileText, FileCheck2, Bell, UserCheck, UserX } from 'lucide-react';
 import Link from 'next/link';
-import { StatusDistributionChart, ProviderPerformanceChart } from '@/components/admin/KPICharts';
-import { UpcomingEventsWidget, AttendanceTrendWidget } from '@/components/admin/DashboardWidget';
-import { AttendanceTrendChart } from '@/components/admin/AttendanceTrendChart';
+import { UpcomingEventsWidget } from '@/components/admin/DashboardWidget';
 import {
   Tooltip,
   TooltipContent,
@@ -112,7 +110,7 @@ export default function AdminDashboard() {
   const upcomingEvents = events
     .filter((e) => new Date(e.date) >= new Date())
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 5);
+    .slice(0, 3);
 
   // Load all entity IDs to check which entities still exist
   useEffect(() => {
@@ -333,7 +331,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {isDataLoading ? (
           <>
             {[1, 2, 3, 4].map((i) => (
@@ -568,23 +566,6 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <StatusDistributionChart assignments={assignments} />
-        <ProviderPerformanceChart assignments={assignments} providers={providers} />
-        <AttendanceTrendWidget assignments={assignments} />
-      </div>
-
-      {!isDataLoading && assignments.filter((a) => a.status === 'accepted' && a.actual_managers !== null).length > 0 && (
-        <Card className="shadow-md border-none bg-card">
-          <CardHeader>
-            <CardTitle>Attendance Trends</CardTitle>
-            <CardDescription>Historical attendance performance (Last 30 Days)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AttendanceTrendChart assignments={assignments} events={events} days={30} />
-          </CardContent>
-        </Card>
-      )}
 
       {!isDataLoading && reminders.length > 0 && (
         <Card className="border-l-4 border-l-blue-500 shadow-md bg-card">
