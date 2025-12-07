@@ -448,6 +448,7 @@ export default function EventDetailPage() {
         status: 'pending',
         details_requested: false,
         times_sent: false,
+        timesheets_confirmed: false,
       });
 
       await loadAssignments(); // Reload to get updated data

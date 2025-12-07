@@ -46,12 +46,12 @@ interface MockDataStore {
   loadInvoices: () => Promise<void>;
   createEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at'>) => Event;
   updateEvent: (id: string, updates: Partial<Event>) => Promise<Event>;
-  deleteEvent: (id: string) => void;
+  deleteEvent: (id: string) => Promise<void>;
   createAssignment: (assignment: Omit<Assignment, 'id'>) => Assignment;
-  updateAssignment: (id: string, updates: Partial<Assignment>) => void;
-  deleteAssignment: (id: string) => void;
-  acceptAssignment: (id: string) => void;
-  declineAssignment: (id: string) => void;
+  updateAssignment: (id: string, updates: Partial<Assignment>) => Promise<void>;
+  deleteAssignment: (id: string) => Promise<void>;
+  acceptAssignment: (id: string) => Promise<void>;
+  declineAssignment: (id: string) => Promise<void>;
   confirmTimesheets: (assignmentId: string, file: File) => Promise<void>;
   loadStaffDetails: (assignmentId: string) => Promise<void>;
   addStaffDetail: (detail: Omit<StaffDetail, 'id'>) => StaffDetail;
@@ -306,7 +306,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     return updatedEvent;
   },
 
-  deleteEvent: (id) => {
+  deleteEvent: async (id) => {
     set((state) => {
       const user = state.currentUser;
       const event = state.events.find((e) => e.id === id);
@@ -331,9 +331,10 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     const newAssignment: Assignment = {
       ...assignmentData,
       id: `assignment-${Date.now()}`,
-      status: 'pending',
-      details_requested: false,
-      times_sent: false,
+      status: assignmentData.status || 'pending',
+      details_requested: assignmentData.details_requested ?? false,
+      times_sent: assignmentData.times_sent ?? false,
+      timesheets_confirmed: assignmentData.timesheets_confirmed ?? false,
     };
     set((state) => ({
       assignments: [...state.assignments, newAssignment],
@@ -341,7 +342,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     return newAssignment;
   },
 
-  updateAssignment: (id, updates) => {
+  updateAssignment: async (id, updates) => {
     set((state) => ({
       assignments: state.assignments.map((assignment) =>
         assignment.id === id ? { ...assignment, ...updates } : assignment
@@ -349,13 +350,13 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     }));
   },
 
-  deleteAssignment: (id) => {
+  deleteAssignment: async (id) => {
     set((state) => ({
       assignments: state.assignments.filter((assignment) => assignment.id !== id),
     }));
   },
 
-  acceptAssignment: (id) => {
+  acceptAssignment: async (id) => {
     set((state) => {
       const user = state.currentUser;
       const assignment = state.assignments.find((a) => a.id === id);
@@ -392,7 +393,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     });
   },
 
-  declineAssignment: (id) => {
+  declineAssignment: async (id) => {
     set((state) => ({
       assignments: state.assignments.map((assignment) =>
         assignment.id === id
