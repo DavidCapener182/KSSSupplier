@@ -95,7 +95,7 @@ export function AssignmentRow({ assignment, provider, onRequestDetails, onViewDe
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-2 border-t">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-2 border-t gap-3">
         {assignment.status === 'accepted' && (
           <div className="text-sm text-gray-600 space-y-1">
             {assignment.details_requested && (
@@ -122,7 +122,7 @@ export function AssignmentRow({ assignment, provider, onRequestDetails, onViewDe
             )}
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-2 ml-auto">
+        <div className="flex flex-wrap items-center justify-end sm:justify-end gap-2 w-full sm:w-auto">
           {assignment.status === 'accepted' && !assignment.details_requested && (
             <Button
               variant="outline"
