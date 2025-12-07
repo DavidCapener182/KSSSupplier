@@ -39,6 +39,8 @@ export default function ProviderOnboardingPage() {
       loadOnboardingDocuments(provider.id);
     }
   }, [provider, loadOnboardingDocuments]);
+  
+  const documents = provider ? getOnboardingDocuments(provider.id) : [];
   const requiredDocs = documents.filter((d) => d.required);
   const completedCount = requiredDocs.filter((d) => d.completed).length;
   
@@ -80,6 +82,7 @@ export default function ProviderOnboardingPage() {
       title: formData.title,
       content: formData.content,
       required: formData.required,
+      completed: false,
     });
 
     toast({

@@ -113,6 +113,7 @@ export default function ProviderDetailPage() {
   }, [providerInvoices]);
 
   const handleSaveNotes = async () => {
+    if (!provider) return;
     setIsSavingNotes(true);
     try {
       await updateProvider(provider.id, { notes });

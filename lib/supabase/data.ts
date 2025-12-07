@@ -69,6 +69,7 @@ function transformAssignment(row: any): Assignment {
     accepted_at: row.accepted_at,
     details_requested: row.details_requested,
     times_sent: row.times_sent || false,
+    timesheets_confirmed: row.timesheets_confirmed ?? false,
     actual_managers: row.actual_managers,
     actual_supervisors: row.actual_supervisors,
     actual_sia: row.actual_sia,
@@ -1388,11 +1389,12 @@ export async function createOnboardingDocument(doc: Omit<OnboardingDocument, 'id
   };
 }
 
-export async function completeOnboardingDocument(id: string, signature: string): Promise<OnboardingDocument> {
+export async function completeOnboardingDocument(id: string, signature: string, signedName?: string): Promise<OnboardingDocument> {
   const { data, error } = await supabase
     .from('onboarding_documents')
     .update({
       signature,
+      signed_name: signedName,
       signed_at: new Date().toISOString(),
     })
     .eq('id', id)

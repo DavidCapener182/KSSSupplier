@@ -37,7 +37,6 @@ interface SupabaseDataStore {
   activityLogs: ActivityLog[];
   notifications: Notification[];
   onboardingDocuments: OnboardingDocument[];
-  availability: ProviderAvailability[];
   unreadMessageCount: number;
   
   // Loading states
@@ -133,7 +132,7 @@ interface SupabaseDataStore {
   loadOnboardingDocuments: (providerId: string) => Promise<void>;
   loadAllOnboardingDocuments: () => Promise<void>;
   createOnboardingDocument: (doc: Omit<OnboardingDocument, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  completeOnboardingDocument: (id: string, signature: string) => Promise<void>;
+  completeOnboardingDocument: (id: string, signature: string, signedName?: string) => Promise<void>;
   isProviderOnboarded: (providerId: string) => Promise<boolean>;
   
   // Helper getters
@@ -509,34 +508,6 @@ export const useSupabaseDataStore = create<SupabaseDataStore>((set, get) => ({
     get().availability.filter((a) => a.event_id === eventId),
   getAvailabilityForProvider: (providerId) =>
     get().availability.filter((a) => a.provider_id === providerId),
-  loadProviderAvailability: async (providerId) => {
-    const availability = await supabaseData.getProviderAvailability(providerId);
-    set((state) => {
-      const other = state.availability.filter((a) => a.provider_id !== providerId);
-      return { availability: [...other, ...availability] };
-    });
-  },
-  loadEventAvailability: async (eventId) => {
-    const availability = await supabaseData.getEventAvailability(eventId);
-    set((state) => {
-      const other = state.availability.filter((a) => a.event_id !== eventId);
-      return { availability: [...other, ...availability] };
-    });
-  },
-  setProviderAvailability: async (providerId, eventId, status) => {
-    const updated = await supabaseData.upsertProviderAvailability(providerId, eventId, status);
-    set((state) => {
-      const other = state.availability.filter(
-        (a) => !(a.provider_id === providerId && a.event_id === eventId)
-      );
-      return { availability: [...other, updated] };
-    });
-    return updated;
-  },
-  getAvailabilityForEvent: (eventId) =>
-    get().availability.filter((a) => a.event_id === eventId),
-  getAvailabilityForProvider: (providerId) =>
-    get().availability.filter((a) => a.provider_id === providerId),
   getAssignmentsByEvent: (eventId) => get().assignments.filter((a) => a.event_id === eventId),
   getAssignmentsByProvider: (providerId) => get().assignments.filter((a) => a.provider_id === providerId),
 
@@ -719,7 +690,6 @@ export const useSupabaseDataStore = create<SupabaseDataStore>((set, get) => ({
     } catch (err) {
       console.error('Error logging document upload:', err);
     }
-    return newDoc;
   },
   deleteDocument: async (id) => {
     await supabaseData.deleteDocument(id);
@@ -983,8 +953,8 @@ export const useSupabaseDataStore = create<SupabaseDataStore>((set, get) => ({
       console.error('Error logging onboarding document creation:', err);
     }
   },
-  completeOnboardingDocument: async (id, signature) => {
-    const updated = await supabaseData.completeOnboardingDocument(id, signature);
+  completeOnboardingDocument: async (id, signature, signedName) => {
+    const updated = await supabaseData.completeOnboardingDocument(id, signature, signedName);
     set((state) => ({
       onboardingDocuments: state.onboardingDocuments.map((d) =>
         d.id === id ? updated : d

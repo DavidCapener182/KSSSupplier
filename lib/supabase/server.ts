@@ -12,17 +12,15 @@ export async function createServerClient() {
   }
 
   return createClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
-        });
+    auth: {
+      persistSession: false,
+    },
+    global: {
+      headers: {
+        'x-custom-header': 'server-client',
       },
     },
-  });
+  } as any);
 }
 
 

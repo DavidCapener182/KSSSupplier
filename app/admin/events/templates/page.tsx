@@ -58,8 +58,8 @@ export default function EventTemplatesPage() {
     date: '',
   });
 
-  const handleCreate = () => {
-    createEventTemplate({
+  const handleCreate = async () => {
+    await createEventTemplate({
       name: formData.name,
       location: formData.location,
       requirements: {
@@ -91,10 +91,10 @@ export default function EventTemplatesPage() {
     }
   };
 
-  const handleUseTemplate = () => {
+  const handleUseTemplate = async () => {
     if (selectedTemplate && useTemplateData.date) {
       try {
-        const event = createEventFromTemplate(
+        const event = await createEventFromTemplate(
           selectedTemplate,
           useTemplateData.date,
           useTemplateData.name || undefined

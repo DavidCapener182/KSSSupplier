@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const { user: loggedInUser } = await signIn(email, password);
-      setUser(loggedInUser);
+      setUser(loggedInUser as User);
       
       // Redirect based on role
       if (loggedInUser.role === 'admin') {

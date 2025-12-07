@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import Link from 'next/link';
-import { Calendar, CheckCircle, Clock, XCircle, ArrowRight, MapPin } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, XCircle, ArrowRight, MapPin, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { SearchInput } from '@/components/shared/SearchInput';
@@ -221,7 +221,7 @@ export default function ProviderEventsPage() {
                 <SearchInput
                   placeholder="Search events by name or location..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={setSearchQuery}
                   className="bg-background"
                 />
               </div>

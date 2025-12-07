@@ -37,6 +37,7 @@ interface MockDataStore {
   documentComments: DocumentComment[];
   currentUser: User | null;
   isLoading: boolean;
+  unreadMessageCount: number;
 
   // Actions
   setCurrentUser: (user: User | null) => void;
@@ -44,10 +45,10 @@ interface MockDataStore {
   loadAssignments: () => Promise<void>;
   loadProviders: () => Promise<void>;
   loadInvoices: () => Promise<void>;
-  createEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at'>) => Event;
+  createEvent: (event: Omit<Event, 'id' | 'created_at' | 'updated_at'>) => Promise<Event>;
   updateEvent: (id: string, updates: Partial<Event>) => Promise<Event>;
   deleteEvent: (id: string) => Promise<void>;
-  createAssignment: (assignment: Omit<Assignment, 'id'>) => Assignment;
+  createAssignment: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => Promise<Assignment>;
   updateAssignment: (id: string, updates: Partial<Assignment>) => Promise<void>;
   deleteAssignment: (id: string) => Promise<void>;
   acceptAssignment: (id: string) => Promise<void>;
@@ -60,8 +61,13 @@ interface MockDataStore {
   createStaffTimes: (staffTimes: Omit<StaffTimes, 'id' | 'created_at' | 'updated_at' | 'sent_at'> & { sent_at?: string }) => Promise<StaffTimes>;
   deleteStaffTimesByAssignment: (assignmentId: string) => Promise<void>;
   getStaffTimesByAssignment: (assignmentId: string) => StaffTimes[];
+  loadMessages: (senderId: string, receiverId: string) => Promise<void>;
   sendMessage: (message: Omit<Message, 'id' | 'timestamp' | 'created_at'>) => Message;
+  deleteMessage: (id: string) => Promise<void>;
+  deleteConversation: (userA: string, userB: string) => Promise<void>;
+  markConversationRead: (otherUserId: string) => Promise<void>;
   getMessages: (userId1: string, userId2: string) => Message[];
+  loadUnreadMessageCount: () => Promise<void>;
   uploadDocument: (document: Omit<Document, 'id' | 'created_at'>) => Document | Promise<Document>;
   getDocumentsByEvent: (eventId: string, providerId?: string) => Document[];
   loadDocuments: (eventId: string, providerId?: string) => Promise<void>;
@@ -72,10 +78,11 @@ interface MockDataStore {
   getInvoicesByProvider: (providerId: string) => Invoice[];
   getInvoicesByEvent: (eventId: string) => Invoice[];
   // Event Template actions
-  createEventTemplate: (template: Omit<EventTemplate, 'id' | 'created_at' | 'updated_at'>) => EventTemplate;
+  loadEventTemplates: () => Promise<void>;
+  createEventTemplate: (template: Omit<EventTemplate, 'id' | 'created_at' | 'updated_at'>) => Promise<EventTemplate>;
   updateEventTemplate: (id: string, updates: Partial<EventTemplate>) => void;
   deleteEventTemplate: (id: string) => void;
-  createEventFromTemplate: (templateId: string, date: string, name?: string) => Event;
+  createEventFromTemplate: (templateId: string, date: string, name?: string) => Promise<Event>;
   // Activity Log actions
   loadActivityLogs: () => Promise<void>;
   addActivityLog: (log: Omit<ActivityLog, 'id' | 'created_at'>) => ActivityLog;
@@ -91,8 +98,9 @@ interface MockDataStore {
   loadAllOnboardingDocuments: () => Promise<void>;
   getOnboardingDocuments: (providerId: string) => OnboardingDocument[];
   createOnboardingDocument: (doc: Omit<OnboardingDocument, 'id' | 'created_at' | 'updated_at'>) => OnboardingDocument;
-  completeOnboardingDocument: (id: string, signature?: string, signedName?: string) => void;
+  completeOnboardingDocument: (id: string, signature?: string, signedName?: string) => Promise<void>;
   isProviderOnboarded: (providerId: string) => boolean;
+  updateProvider: (id: string, updates: Partial<Provider>) => Promise<void>;
   updateProviderDetails: (id: string, details: Partial<Provider>) => Promise<void>;
   approveProvider: (id: string) => Promise<void>;
   rejectProvider: (id: string, reason?: string) => Promise<void>;
@@ -228,6 +236,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
   ],
   currentUser: null,
   isLoading: false,
+  unreadMessageCount: 0,
   reminders: [],
   documentComments: [],
 
@@ -250,7 +259,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
   },
 
   // Event actions
-  createEvent: (eventData) => {
+  createEvent: async (eventData) => {
     const newEvent: Event = {
       ...eventData,
       id: `event-${Date.now()}`,
@@ -327,7 +336,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
   },
 
   // Assignment actions
-  createAssignment: (assignmentData) => {
+  createAssignment: async (assignmentData) => {
     const newAssignment: Assignment = {
       ...assignmentData,
       id: `assignment-${Date.now()}`,
@@ -511,6 +520,16 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
   },
 
   // Message actions
+  loadMessages: async (senderId, receiverId) => {
+    // In mock mode, messages are already in state, so just resolve
+    return Promise.resolve();
+  },
+
+  loadUnreadMessageCount: async () => {
+    // In mock mode, unread count is calculated from state, so just resolve
+    return Promise.resolve();
+  },
+
   sendMessage: (messageData) => {
     const newMessage: Message = {
       ...messageData,
@@ -538,6 +557,38 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
       };
     });
     return newMessage;
+  },
+
+  deleteMessage: async (id) => {
+    set((state) => ({
+      messages: state.messages.filter((m) => m.id !== id),
+    }));
+  },
+
+  deleteConversation: async (userA, userB) => {
+    set((state) => ({
+      messages: state.messages.filter(
+        (m) =>
+          !(
+            (m.sender_id === userA && m.receiver_id === userB) ||
+            (m.sender_id === userB && m.receiver_id === userA)
+          )
+      ),
+    }));
+  },
+
+  markConversationRead: async (otherUserId) => {
+    const currentUser = get().currentUser;
+    if (!currentUser) return;
+    
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        (m.sender_id === otherUserId && m.receiver_id === currentUser.id) ||
+        (m.sender_id === currentUser.id && m.receiver_id === otherUserId)
+          ? { ...m, read: true }
+          : m
+      ),
+    }));
   },
 
   getMessages: (userId1, userId2) => {
@@ -628,7 +679,12 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
   },
 
   // Event Template actions
-  createEventTemplate: (templateData) => {
+  loadEventTemplates: async () => {
+    // In mock mode, templates are already in state, so just resolve
+    return Promise.resolve();
+  },
+
+  createEventTemplate: async (templateData) => {
     const newTemplate: EventTemplate = {
       ...templateData,
       id: `template-${Date.now()}`,
@@ -657,18 +713,18 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     }));
   },
 
-  createEventFromTemplate: (templateId, date, name) => {
+  createEventFromTemplate: async (templateId, date, name) => {
     const template = get().eventTemplates.find((t) => t.id === templateId);
     if (!template) {
       throw new Error('Template not found');
     }
-      return get().createEvent({
-        name: name || template.name,
-        location: template.location || '',
-        date,
-        requirements: template.requirements,
-      });
-    },
+    return await get().createEvent({
+      name: name || template.name,
+      location: template.location || '',
+      date,
+      requirements: template.requirements,
+    });
+  },
 
   // Activity Log actions
   loadActivityLogs: async () => {
@@ -769,7 +825,7 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     return newDoc;
   },
 
-  completeOnboardingDocument: (id, signature, signedName) => {
+  completeOnboardingDocument: async (id, signature, signedName) => {
     set((state) => {
       const updatedDocs = state.onboardingDocuments.map((doc) =>
         doc.id === id
@@ -823,6 +879,19 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     if (!provider) return false;
     // Provider is onboarded if they have status 'approved'
     return provider.status === 'approved';
+  },
+
+  updateProvider: async (id, updates) => {
+    set((state) => ({
+      providers: state.providers.map((provider) =>
+        provider.id === id
+          ? {
+              ...provider,
+              ...updates,
+            }
+          : provider
+      ),
+    }));
   },
 
   updateProviderDetails: async (id, details) => {

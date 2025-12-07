@@ -112,7 +112,7 @@ export function generateEventSummaryPDF(
   }
 
   // Footer
-  const totalPages = doc.getNumberOfPages();
+  const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(10);
@@ -350,7 +350,7 @@ export function generatePncSiaPDF(
   });
 
   // Footer
-  const totalPages = doc.getNumberOfPages();
+  const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
@@ -675,7 +675,7 @@ function buildInvoicePDF(
   doc.text('Payment will be made to the account details provided by the provider during onboarding.', 20, yPosition, { maxWidth: pageWidth - 40 });
 
   // Footer
-  const totalPages = doc.getNumberOfPages();
+  const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(8);

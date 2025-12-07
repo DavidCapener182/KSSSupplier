@@ -103,7 +103,7 @@ export default function ReportsPage() {
 
   const handleExport = () => {
     if (reportType === 'events') {
-      const csvData = exportEventsToCSV(filteredData.events);
+      const csvData = exportEventsToCSV(filteredData.events, filteredData.assignments, providers);
       downloadCSV(csvData, `events-report-${dateRange ? format(dateRange.from, 'yyyy-MM-dd') : 'all'}.csv`);
     } else if (reportType === 'attendance' || reportType === 'overview') {
       const csvData = exportAssignmentsToCSV(providerFilteredAssignments, filteredData.events, providers);

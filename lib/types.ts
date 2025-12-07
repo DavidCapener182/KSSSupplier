@@ -144,7 +144,7 @@ export interface ActivityLog {
   id: string;
   user_id: string;
   action: string;
-  entity_type: 'event' | 'assignment' | 'invoice' | 'document' | 'message' | 'provider';
+  entity_type: 'event' | 'assignment' | 'invoice' | 'document' | 'message' | 'provider' | 'onboarding_document';
   entity_id: string;
   details: Record<string, any>;
   created_at: string;

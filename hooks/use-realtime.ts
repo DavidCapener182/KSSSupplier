@@ -12,7 +12,10 @@ export function useRealtime<T>(
   callback: (data: T) => void
 ) {
   useEffect(() => {
-    const unsubscribe = useMockDataStore.subscribe(selector, callback);
+    const unsubscribe = useMockDataStore.subscribe((state) => {
+      const selected = selector(state);
+      callback(selected);
+    });
     return unsubscribe;
   }, [selector, callback]);
 }
@@ -30,10 +33,10 @@ export function useAssignmentUpdates(
       return;
     }
 
-    const unsubscribe = useMockDataStore.subscribe(
-      (state) => state.assignments.find((a) => a.id === assignmentId) || null,
-      callback
-    );
+    const unsubscribe = useMockDataStore.subscribe((state) => {
+      const assignment = state.assignments.find((a) => a.id === assignmentId) || null;
+      callback(assignment);
+    });
 
     return unsubscribe;
   }, [assignmentId, callback]);
@@ -53,15 +56,14 @@ export function useMessageUpdates(
       return;
     }
 
-    const unsubscribe = useMockDataStore.subscribe(
-      (state) =>
-        state.messages.filter(
-          (msg) =>
-            (msg.sender_id === userId1 && msg.receiver_id === userId2) ||
-            (msg.sender_id === userId2 && msg.receiver_id === userId1)
-        ),
-      callback
-    );
+    const unsubscribe = useMockDataStore.subscribe((state) => {
+      const messages = state.messages.filter(
+        (msg) =>
+          (msg.sender_id === userId1 && msg.receiver_id === userId2) ||
+          (msg.sender_id === userId2 && msg.receiver_id === userId1)
+      );
+      callback(messages);
+    });
 
     return unsubscribe;
   }, [userId1, userId2, callback]);

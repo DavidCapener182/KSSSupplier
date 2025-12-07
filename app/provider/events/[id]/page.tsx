@@ -87,15 +87,15 @@ export default function ProviderEventDetailPage() {
   });
   const [showPncDialog, setShowPncDialog] = useState(false);
   const [proformaHTML, setProformaHTML] = useState<string | null>(null);
-  const proformaGeneratedRef = useRef(false);
+  const proformaGeneratedRef = useRef<string | false>(false);
 
   useEffect(() => {
     loadEvents();
     loadAssignments();
     loadProviders();
-    loadDocuments();
+    loadDocuments(id);
     loadInvoices();
-  }, [loadEvents, loadAssignments, loadProviders, loadDocuments, loadInvoices]);
+  }, [id, loadEvents, loadAssignments, loadProviders, loadDocuments, loadInvoices]);
 
   const handleBulkStaffUpload = (staffList: Omit<StaffDetail, 'id'>[]) => {
     staffList.forEach((staff) => {
@@ -178,7 +178,7 @@ export default function ProviderEventDetailPage() {
       if (proformaHTML) {
         setProformaHTML(null);
       }
-      proformaGeneratedRef.current = '';
+      proformaGeneratedRef.current = false;
       return;
     }
 
@@ -367,9 +367,9 @@ export default function ProviderEventDetailPage() {
     addStaffDetail({
       assignment_id: assignment.id,
       staff_name: staffDetailForm.staff_name,
-      role: staffDetailForm.role as any || null,
-      sia_number: staffDetailForm.sia_number || null,
-      pnc_info: staffDetailForm.pnc_info || null,
+      role: (staffDetailForm.role as 'Manager' | 'Supervisor' | 'SIA' | 'Steward') || undefined,
+      sia_number: staffDetailForm.sia_number || undefined,
+      pnc_info: staffDetailForm.pnc_info || undefined,
     });
 
     setStaffDetailForm({
