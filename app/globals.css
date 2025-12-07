@@ -1,0 +1,247 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Print Styles */
+@media print {
+  /* Hide navigation and non-essential elements */
+  nav,
+  aside,
+  button:not(.print-keep),
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure content is visible */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Page breaks */
+  .print-break-after {
+    page-break-after: always;
+  }
+
+  .print-break-before {
+    page-break-before: always;
+  }
+
+  .print-break-inside-avoid,
+  .break-inside-avoid-page {
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }
+
+  /* Optimize for printing */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Ensure tables don't break across pages awkwardly */
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Card styling for print */
+  .card,
+  [class*='Card'] {
+    border: 1px solid #000 !important;
+    page-break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  /* Charts - hide or show as needed */
+  .print-hide-charts {
+    display: none !important;
+  }
+
+  /* Links */
+  a[href]:after {
+    content: ' (' attr(href) ')';
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  a[href^='#']:after,
+  a[href^='javascript:']:after {
+    content: '';
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    
+    /* Red Accent for Primary */
+    --primary: 0 84.2% 60.2%; /* #EF4444 */
+    --primary-foreground: 210 40% 98%;
+    
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 0 84.2% 60.2%;
+    
+    /* Charcoal Custom Color */
+    --charcoal: 0 0% 17%; /* #2C2C2C */
+    --charcoal-foreground: 0 0% 100%;
+
+    /* Chart Colors */
+    --chart-1: 0 84.2% 60.2%; /* Red */
+    --chart-2: 173 58% 39%;   /* Teal */
+    --chart-3: 197 37% 24%;   /* Dark Blue */
+    --chart-4: 43 74% 66%;    /* Yellow */
+    --chart-5: 27 87% 67%;    /* Orange */
+    
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 17%; /* Charcoal #2C2C2C */
+    --foreground: 210 40% 98%;
+    --card: 0 0% 17%; /* Match background for seamless look */
+    --card-foreground: 210 40% 98%;
+    --popover: 0 0% 17%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 0 84.2% 60.2%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 0 0% 100%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 0 84.2% 60.2%;
+    --chart-1: 0 84.2% 60.2%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* React Calendar Styles */
+.react-calendar {
+  width: 100%;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  font-family: inherit;
+  background: hsl(var(--background));
+}
+
+.react-calendar__tile {
+  padding: 0.5rem;
+  height: 60px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.react-calendar__tile:enabled:hover {
+  background: hsl(var(--accent));
+}
+
+.react-calendar__tile--active {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+.react-calendar__tile--now {
+  background: hsl(var(--accent));
+}
+
+.react-calendar__navigation button {
+  font-size: 1rem;
+  padding: 0.5rem;
+  color: hsl(var(--foreground));
+}
+
+.react-calendar__navigation button:enabled:hover,
+.react-calendar__navigation button:enabled:focus {
+  background: hsl(var(--accent));
+}
+
+.react-calendar__month-view__weekdays {
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  padding: 0.5rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
