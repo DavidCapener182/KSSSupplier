@@ -77,6 +77,7 @@ interface MockDataStore {
   deleteEventTemplate: (id: string) => void;
   createEventFromTemplate: (templateId: string, date: string, name?: string) => Event;
   // Activity Log actions
+  loadActivityLogs: () => Promise<void>;
   addActivityLog: (log: Omit<ActivityLog, 'id' | 'created_at'>) => ActivityLog;
   getActivityLogs: (filters?: { entity_type?: string; entity_id?: string; user_id?: string }) => ActivityLog[];
   // Notification actions
@@ -661,6 +662,12 @@ export const useMockDataStore = create<MockDataStore>((set, get) => ({
     },
 
   // Activity Log actions
+  loadActivityLogs: async () => {
+    // In mock mode, activity logs are already in state, so just resolve
+    // This matches the Supabase store interface
+    return Promise.resolve();
+  },
+
   addActivityLog: (logData) => {
     const newLog: ActivityLog = {
       ...logData,
