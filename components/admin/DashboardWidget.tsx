@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, forwardRef } from 'react';
+import { useState, forwardRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays } from 'date-fns';
@@ -45,14 +45,27 @@ interface UpcomingEventsWidgetProps {
 export const UpcomingEventsWidget = forwardRef<HTMLDivElement, UpcomingEventsWidgetProps>(
   ({ events, assignments, providers, className }, ref) => {
     const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-    const upcoming = events
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const allUpcoming = events
       .filter((e) => new Date(e.date) >= new Date())
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 3);
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    const upcoming = allUpcoming.slice(0, isMobile ? 3 : 10);
+    const eventCount = isMobile ? 3 : 10;
 
     return (
       <>
-        <DashboardWidget ref={ref} title="Upcoming Events" description="Next 3 events on the schedule" className={className}>
+        <DashboardWidget ref={ref} title="Upcoming Events" description={`Next ${eventCount} events on the schedule`} className={className}>
         <div className="flex h-full flex-col gap-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {upcoming.map((event) => {
