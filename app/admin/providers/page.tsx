@@ -306,22 +306,23 @@ export default function ProvidersPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Providers</h1>
           <p className="text-muted-foreground mt-2">Manage labour provider companies</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
           <Button
             variant="outline"
             onClick={() => {
               const csv = exportAssignmentsToCSV(assignments, events, providers);
               downloadCSV(csv, `assignments-${format(new Date(), 'yyyy-MM-dd')}.csv`);
             }}
-            className="bg-background hover:bg-accent"
+            className="bg-background hover:bg-accent flex-shrink-0"
           >
             <Download className="h-4 w-4 mr-2" />
-            Export Assignments
+            <span className="hidden sm:inline">Export Assignments</span>
+            <span className="sm:hidden">Export</span>
           </Button>
           
           <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 flex-shrink-0">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Provider
               </Button>
@@ -439,7 +440,7 @@ export default function ProvidersPage() {
       </div>
 
       <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 max-w-[800px]">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-2 max-w-[800px]">
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="awaiting_approval">Awaiting Approval</TabsTrigger>
           <TabsTrigger value="pending_documents">Pending Documents</TabsTrigger>

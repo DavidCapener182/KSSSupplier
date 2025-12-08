@@ -144,15 +144,18 @@ export default function ProviderDetailPage() {
         <p className="text-gray-600 mt-1">{provider.contact_email}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="h-full flex flex-col">
+          <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <CardDescription>Shifts Completed</CardDescription>
             <CardTitle className="text-2xl">{shiftsCompleted}</CardTitle>
           </CardHeader>
+          <CardContent className="text-sm text-gray-600 pt-0">
+            <span className="invisible">placeholder</span>
+          </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="h-full flex flex-col">
+          <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <CardDescription>Total Invoiced</CardDescription>
             <CardTitle className="text-2xl">{currencyFormatter.format(invoiceTotals.invoiceValue)}</CardTitle>
           </CardHeader>
@@ -160,8 +163,8 @@ export default function ProviderDetailPage() {
             {invoiceTotals.invoiceCount} invoice{invoiceTotals.invoiceCount === 1 ? '' : 's'}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="h-full flex flex-col">
+          <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <CardDescription>Paid</CardDescription>
             <CardTitle className="text-2xl">{currencyFormatter.format(invoiceTotals.paidValue)}</CardTitle>
           </CardHeader>
@@ -169,8 +172,8 @@ export default function ProviderDetailPage() {
             {invoiceTotals.paidCount} paid
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="h-full flex flex-col">
+          <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <CardDescription>Proforma</CardDescription>
             <CardTitle className="text-2xl">{currencyFormatter.format(invoiceTotals.proformaValue)}</CardTitle>
           </CardHeader>

@@ -36,44 +36,45 @@ export function EventCalendar({ events, assignments, onDateClick, getEventStatus
 
   return (
     <div className="space-y-6">
-      <div className="w-full rounded-xl border bg-card text-card-foreground p-4 shadow-sm">
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={handleDateSelect}
-          fromDate={new Date(2026, 0, 1)}
-          toDate={new Date(2026, 11, 31)}
-          className="w-full rounded-md border"
-          classNames={{
-            months: "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-            month: "space-y-4 w-full",
-            table: "w-full border-collapse space-y-1",
-            head_row: "flex w-full",
-            head_cell: "text-muted-foreground rounded-md flex-1 font-normal text-[0.8rem]",
-            row: "flex w-full mt-2",
-            cell: "h-auto w-full min-h-[120px] text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-            day: "h-full w-full p-2 font-normal aria-selected:opacity-100 items-start justify-start text-left",
-            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-            day_today: "bg-accent text-accent-foreground",
-            day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-            day_disabled: "text-muted-foreground opacity-50",
-            day_hidden: "invisible",
-          }}
+      <div className="w-full rounded-xl border bg-card text-card-foreground p-2 sm:p-4 shadow-sm overflow-x-auto -mx-2 sm:mx-0">
+        <div className="min-w-[600px] sm:min-w-0">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleDateSelect}
+            fromDate={new Date(2026, 0, 1)}
+            toDate={new Date(2026, 11, 31)}
+            className="w-full rounded-md border"
+            classNames={{
+              months: "flex w-full flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+              month: "space-y-4 w-full min-w-[600px] sm:min-w-0",
+              table: "w-full border-collapse space-y-1",
+              head_row: "flex w-full",
+              head_cell: "text-muted-foreground rounded-md flex-1 font-normal text-[0.7rem] sm:text-[0.8rem] min-w-[80px] sm:min-w-0",
+              row: "flex w-full mt-2",
+              cell: "h-auto flex-1 min-h-[80px] sm:min-h-[120px] text-center text-xs sm:text-sm p-1 sm:p-2 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+              day: "h-full w-full p-1 sm:p-2 font-normal aria-selected:opacity-100 items-start justify-start text-left",
+              day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+              day_today: "bg-accent text-accent-foreground",
+              day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+              day_disabled: "text-muted-foreground opacity-50",
+              day_hidden: "invisible",
+            }}
           components={{
             DayContent: ({ date }) => {
               const dayEvents = getEventsForDate(date);
               return (
                 <div className="flex h-full w-full flex-col justify-between">
-                  <div className="self-start font-medium">{format(date, 'd')}</div>
+                  <div className="self-start font-medium text-xs sm:text-sm">{format(date, 'd')}</div>
                   {dayEvents.length > 0 && (
-                    <div className="mt-1 flex w-full flex-col gap-1 text-left">
+                    <div className="mt-1 flex w-full flex-col gap-0.5 sm:gap-1 text-left">
                       {dayEvents.slice(0, 2).map((event) => {
                         const status = getEventStatus ? getEventStatus(event.id) : null;
                         return (
-                          <div key={event.id} className="flex items-start gap-1.5 text-[10px] leading-tight">
+                          <div key={event.id} className="flex items-start gap-1 text-[8px] sm:text-[10px] leading-tight">
                             <span
                               className={cn(
-                                'mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full',
+                                'mt-0.5 sm:mt-1 inline-block h-1 w-1 sm:h-1.5 sm:w-1.5 shrink-0 rounded-full',
                                 status?.variant === 'success' && 'bg-green-500',
                                 status?.variant === 'warning' && 'bg-yellow-500',
                                 status?.variant === 'destructive' && 'bg-red-500',
@@ -88,7 +89,7 @@ export function EventCalendar({ events, assignments, onDateClick, getEventStatus
                         );
                       })}
                       {dayEvents.length > 2 && (
-                        <div className="pl-3 text-[10px] text-muted-foreground">
+                        <div className="pl-2 sm:pl-3 text-[8px] sm:text-[10px] text-muted-foreground">
                           +{dayEvents.length - 2} more
                         </div>
                       )}
@@ -98,7 +99,8 @@ export function EventCalendar({ events, assignments, onDateClick, getEventStatus
               );
             },
           }}
-        />
+          />
+        </div>
       </div>
 
       <Card>

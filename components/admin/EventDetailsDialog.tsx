@@ -227,7 +227,7 @@ export function EventDetailsDialog({
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center justify-between gap-2 mb-2">
                               <h4 className="font-semibold">{provider.company_name}</h4>
                               {getStatusBadge()}
                             </div>
@@ -236,7 +236,7 @@ export function EventDetailsDialog({
                                 <span className="text-muted-foreground">Managers:</span>{' '}
                                 <span className="font-medium">{assignment.assigned_managers}</span>
                               </div>
-                              <div>
+                              <div className="text-right">
                                 <span className="text-muted-foreground">Supervisors:</span>{' '}
                                 <span className="font-medium">{assignment.assigned_supervisors}</span>
                               </div>
@@ -244,7 +244,7 @@ export function EventDetailsDialog({
                                 <span className="text-muted-foreground">SIA:</span>{' '}
                                 <span className="font-medium">{assignment.assigned_sia}</span>
                               </div>
-                              <div>
+                              <div className="text-right">
                                 <span className="text-muted-foreground">Stewards:</span>{' '}
                                 <span className="font-medium">{assignment.assigned_stewards}</span>
                               </div>

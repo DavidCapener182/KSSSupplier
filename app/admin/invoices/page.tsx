@@ -229,9 +229,9 @@ export default function InvoicesPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/20 dark:to-card">
-          <CardHeader className="pb-2">
+      <div className="grid grid-cols-2 gap-6">
+        <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/20 dark:to-card h-full flex flex-col">
+          <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <CardDescription className="text-blue-600 dark:text-blue-400 font-medium">Total Proforma</CardDescription>
               <FileText className="h-4 w-4 text-blue-500 dark:text-blue-400" />
@@ -242,8 +242,8 @@ export default function InvoicesPage() {
             {invoiceTotals.proformaCount} proforma{invoiceTotals.proformaCount === 1 ? '' : 's'}
           </CardContent>
         </Card>
-        <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card">
-          <CardHeader className="pb-2">
+        <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card h-full flex flex-col">
+          <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <CardDescription className="text-muted-foreground font-medium">Total Invoiced</CardDescription>
               <PoundSterling className="h-4 w-4 text-muted-foreground" />
@@ -254,8 +254,8 @@ export default function InvoicesPage() {
             {invoiceTotals.invoiceCount} invoice{invoiceTotals.invoiceCount === 1 ? '' : 's'}
           </CardContent>
         </Card>
-        <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-green-50 to-white dark:from-green-900/20 dark:to-card">
-          <CardHeader className="pb-2">
+        <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-green-50 to-white dark:from-green-900/20 dark:to-card h-full flex flex-col">
+          <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <CardDescription className="text-green-600 dark:text-green-400 font-medium">Paid Value</CardDescription>
               <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
@@ -266,8 +266,8 @@ export default function InvoicesPage() {
             {invoiceTotals.paidCount} paid
           </CardContent>
         </Card>
-        <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-amber-50 to-white dark:from-amber-900/20 dark:to-card">
-          <CardHeader className="pb-2">
+        <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-amber-50 to-white dark:from-amber-900/20 dark:to-card h-full flex flex-col">
+          <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <CardDescription className="text-amber-600 dark:text-amber-400 font-medium">Outstanding</CardDescription>
               <Clock className="h-4 w-4 text-amber-500 dark:text-amber-400" />

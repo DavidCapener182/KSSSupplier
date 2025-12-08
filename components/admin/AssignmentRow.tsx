@@ -81,7 +81,7 @@ export function AssignmentRow({ assignment, provider, onRequestDetails, onViewDe
           <span className="text-gray-600">Managers:</span>
           <span className="ml-2 font-medium">{assignment.assigned_managers}</span>
         </div>
-        <div>
+        <div className="text-right">
           <span className="text-gray-600">Supervisors:</span>
           <span className="ml-2 font-medium">{assignment.assigned_supervisors}</span>
         </div>
@@ -89,7 +89,7 @@ export function AssignmentRow({ assignment, provider, onRequestDetails, onViewDe
           <span className="text-gray-600">SIA:</span>
           <span className="ml-2 font-medium">{assignment.assigned_sia}</span>
         </div>
-        <div>
+        <div className="text-right">
           <span className="text-gray-600">Stewards:</span>
           <span className="ml-2 font-medium">{assignment.assigned_stewards}</span>
         </div>
