@@ -4,6 +4,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useDataStore } from '@/lib/data-store';
 import { useAuth } from '@/lib/auth-context';
 import type { Assignment } from '@/lib/types';
+import { SIALicenseVerification } from '@/components/admin/SIALicenseVerification';
+import { AIProviderRecommendations } from '@/components/admin/AIProviderRecommendations';
+import { StaffingRiskAlerts } from '@/components/admin/StaffingRiskAlerts';
+import { DoubleBookingAlerts } from '@/components/admin/DoubleBookingAlerts';
+import { EventSuccessReport } from '@/components/admin/EventSuccessReport';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,10 +41,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { format } from 'date-fns';
+import { format, differenceInDays, isSameDay, parseISO } from 'date-fns';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Upload, FileText, Edit, Trash2, Calendar, HelpCircle, Download, Printer, FileBarChart } from 'lucide-react';
+import { ArrowLeft, Plus, Upload, FileText, Edit, Trash2, Calendar, HelpCircle, Download, Printer, FileBarChart, Play, Square, QrCode } from 'lucide-react';
 import { generateEventSummaryPDF, generateInvoicePDF, generatePncSiaPDF } from '@/lib/pdf-export';
+import { startEvent, stopEvent } from '@/app/actions/gatekeeper-actions';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
@@ -349,6 +355,44 @@ export default function EventDetailPage() {
 
   // Find event - will be undefined until data loads
   const event = events.find((e) => e.id === id);
+
+  const [isStartEventDialogOpen, setIsStartEventDialogOpen] = useState(false);
+  const [daysUntilEvent, setDaysUntilEvent] = useState(0);
+
+  const handleStartEvent = async () => {
+    try {
+      await startEvent(id);
+      toast({ title: "Event Started", description: "Event is now active.", variant: "success" });
+      setIsStartEventDialogOpen(false);
+      loadEvents(); 
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Failed to start event", variant: "destructive" });
+    }
+  };
+
+  const handleStopEvent = async () => {
+    try {
+      await stopEvent(id);
+      toast({ title: "Event Stopped", description: "Event is now scheduled.", variant: "success" });
+      loadEvents();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Failed to stop event", variant: "destructive" });
+    }
+  };
+
+  const onStartClick = () => {
+    if (!event) return;
+    const eventDate = parseISO(event.date); 
+    const today = new Date();
+    
+    if (isSameDay(eventDate, today)) {
+      handleStartEvent();
+    } else {
+      const diff = differenceInDays(eventDate, today);
+      setDaysUntilEvent(diff);
+      setIsStartEventDialogOpen(true);
+    }
+  };
   
   useEffect(() => {
     if (event) {
@@ -390,6 +434,14 @@ export default function EventDetailPage() {
       </div>
     );
   }
+
+  const handleAIAssign = (providerId: string) => {
+    // Determine which provider list to use
+    // If we have providers loaded in state, try to find matching one
+    // Note: The AI returns Supabase UUIDs. The dropdown might need UUIDs or mock IDs depending on env.
+    setNewAssignment(prev => ({ ...prev, providerId }));
+    setIsAssignDialogOpen(true);
+  };
 
   const handleCreateAssignment = async () => {
     if (!newAssignment.providerId || isSubmittingAssignment) return;
@@ -959,60 +1011,112 @@ export default function EventDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">{event.name}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold">{event.name}</h1>
+              {event.status === 'active' && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 animate-pulse border-green-200">
+                  ● LIVE
+                </Badge>
+              )}
+              {event.status === 'completed' && <Badge variant="secondary">Completed</Badge>}
+              {event.status === 'cancelled' && <Badge variant="destructive">Cancelled</Badge>}
+            </div>
             <p className="text-sm sm:text-base text-gray-600 mt-1">
               {format(new Date(event.date), 'MMMM dd, yyyy')} • {event.location}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-shrink-0"
-            onClick={() => {
-              if (event) {
-                // Collect all staff details for this event
-                const eventAssignments = assignments.filter((a) => a.event_id === event.id);
-                const eventStaffDetails = eventAssignments.flatMap((a) => getStaffDetailsByAssignment(a.id));
-                
-                generatePncSiaPDF(event, eventAssignments, providersForDisplay, eventStaffDetails);
-                toast({
-                  title: 'PDF Generated',
-                  description: 'PNC/SIA staff details PDF has been downloaded.',
-                  variant: 'success',
-                });
-              }
-            }}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Export PDF</span>
-            <span className="sm:hidden">PDF</span>
-          </Button>
-          <Link href={`/reports/pnc/${id}`} target="_blank">
-            <Button variant="outline" size="sm" className="flex-shrink-0">
-              <FileBarChart className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">View Report</span>
-              <span className="sm:hidden">Report</span>
-            </Button>
-          </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-shrink-0 print-keep"
-            onClick={() => window.print()}
-          >
-            <Printer className="h-4 w-4 mr-2" />
-            Print
-          </Button>
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-shrink-0">
-                <Edit className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Edit Event</span>
-                <span className="sm:hidden">Edit</span>
+          {event.status === 'active' ? (
+            <>
+              <Link href={`/admin/events/${id}/live`}>
+                <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm">
+                  <QrCode className="h-4 w-4 mr-2" />
+                  Gatekeeper Mode
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleStopEvent}
+                className="text-amber-600 border-amber-200 hover:bg-amber-50"
+              >
+                <Square className="h-4 w-4 mr-2 fill-current" />
+                Stop Event
               </Button>
-            </DialogTrigger>
+            </>
+          ) : (
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white" 
+              size="sm" 
+              onClick={onStartClick}
+              disabled={event.status === 'completed' || event.status === 'cancelled'}
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Start Live Event
+            </Button>
+          )}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-shrink-0"
+                onClick={() => {
+                  if (event) {
+                    // Collect all staff details for this event
+                    const eventAssignments = assignments.filter((a) => a.event_id === event.id);
+                    const eventStaffDetails = eventAssignments.flatMap((a) => getStaffDetailsByAssignment(a.id));
+                    
+                    generatePncSiaPDF(event, eventAssignments, providersForDisplay, eventStaffDetails);
+                    toast({
+                      title: 'PDF Generated',
+                      description: 'PNC/SIA staff details PDF has been downloaded.',
+                      variant: 'success',
+                    });
+                  }
+                }}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Export PDF</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href={`/reports/pnc/${id}`} target="_blank">
+                <Button variant="outline" size="sm" className="flex-shrink-0">
+                  <FileBarChart className="h-4 w-4" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>View Report</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-shrink-0 print-keep"
+                onClick={() => window.print()}
+              >
+                <Printer className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Print</TooltipContent>
+          </Tooltip>
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-shrink-0">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Edit Event</TooltipContent>
+            </Tooltip>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Edit Event</DialogTitle>
@@ -1094,13 +1198,16 @@ export default function EventDetailPage() {
             </DialogContent>
           </Dialog>
           <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" className="flex-shrink-0">
-                <Trash2 className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Delete Event</span>
-                <span className="sm:hidden">Delete</span>
-              </Button>
-            </AlertDialogTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="flex-shrink-0">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Delete Event</TooltipContent>
+            </Tooltip>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -1121,7 +1228,7 @@ export default function EventDetailPage() {
       </div>
 
       <Tabs defaultValue="assignments" className="space-y-4 md:space-y-6">
-        <TabsList className="w-full overflow-x-auto">
+        <TabsList className="justify-start overflow-x-auto">
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="staff">Staff</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -1130,6 +1237,10 @@ export default function EventDetailPage() {
         </TabsList>
 
         <TabsContent value="assignments" className="space-y-4 md:space-y-6">
+          <StaffingRiskAlerts eventId={id} />
+          <DoubleBookingAlerts eventId={id} />
+          <AIProviderRecommendations eventId={id} onAssign={handleAIAssign} />
+          
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -1394,6 +1505,10 @@ export default function EventDetailPage() {
         </TabsContent>
 
         <TabsContent value="staff" className="space-y-4 md:space-y-6">
+          <SIALicenseVerification 
+            staffDetails={eventAssignments.flatMap(a => getStaffDetailsByAssignment(a.id))} 
+          />
+          
           <Card>
             <CardHeader>
               <CardTitle>Event Staff</CardTitle>
@@ -1549,6 +1664,7 @@ export default function EventDetailPage() {
         </TabsContent>
 
         <TabsContent value="kpis" className="space-y-4 md:space-y-6">
+          <EventSuccessReport eventId={id} />
           {eventAssignments.filter((a) => a.status === 'accepted' && a.actual_managers !== null).length > 0 && (
             <>
               <div className="grid gap-4 md:grid-cols-2">
@@ -2049,6 +2165,22 @@ export default function EventDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isStartEventDialogOpen} onOpenChange={setIsStartEventDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start Event Early?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This event is scheduled for {daysUntilEvent > 0 ? `${daysUntilEvent} days from now` : `${Math.abs(daysUntilEvent)} days ago`}. 
+              Are you sure you want to start it now?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleStartEvent}>Start Event</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

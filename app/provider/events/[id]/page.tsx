@@ -22,6 +22,7 @@ import { generateInvoiceHTML } from '@/lib/invoice-html';
 import { useToast } from '@/components/ui/use-toast';
 import { FileUpload } from '@/components/shared/FileUpload';
 import { StaffBulkUpload } from '@/components/provider/StaffBulkUpload';
+import { StaffBriefing } from '@/components/provider/StaffBriefing';
 import type { StaffDetail } from '@/lib/types';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -661,6 +662,15 @@ export default function ProviderEventDetailPage() {
               })()}
             </CardContent>
           </Card>
+
+          {assignment && assignment.status === 'accepted' && (
+            <StaffBriefing
+              eventId={id}
+              eventName={event?.name || ''}
+              eventDate={event ? format(new Date(event.date), 'MMMM dd, yyyy') : ''}
+              eventLocation={event?.location || ''}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="staff" className="space-y-4">

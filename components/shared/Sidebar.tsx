@@ -16,10 +16,14 @@ import {
   BarChart3,
   Settings,
   HelpCircle,
+  Search,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useDataStore } from '@/lib/data-store';
 import { useEffect } from 'react';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 
 interface NavItem {
   title: string;
@@ -36,6 +40,7 @@ const adminNavItems: NavItem[] = [
   { title: 'Pending Approvals', href: '/admin/providers/pending', icon: Clock },
   { title: 'Messages', href: '/admin/messages', icon: MessageSquare },
   { title: 'Invoices', href: '/admin/invoices', icon: FileText },
+  { title: 'Data Search', href: '/admin/search', icon: Search },
   { title: 'Activity Log', href: '/admin/activity', icon: Activity },
   { title: 'Calendar', href: '/admin/calendar', icon: CalendarDays },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
@@ -54,7 +59,7 @@ const providerNavItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { unreadMessageCount, loadUnreadMessageCount } = useDataStore();
 
   useEffect(() => {
@@ -66,8 +71,8 @@ export function Sidebar() {
   const navItems = user?.role === 'admin' ? adminNavItems : providerNavItems;
 
   return (
-    <aside className="hidden md:block sticky top-[64px] w-64 bg-background border-r h-[calc(100vh-64px)] overflow-y-auto p-4" role="complementary" aria-label="Sidebar navigation">
-      <nav className="space-y-1" role="navigation" aria-label="Main menu">
+    <aside className="hidden md:flex flex-col sticky top-[64px] w-64 bg-background border-r h-[calc(100vh-64px)]" role="complementary" aria-label="Sidebar navigation">
+      <nav className="flex-1 overflow-y-auto p-4 space-y-1" role="navigation" aria-label="Main menu">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -97,6 +102,18 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="p-4 border-t">
+        <Separator className="mb-4" />
+        <Button
+          variant="ghost"
+          onClick={() => logout()}
+          className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-accent"
+          aria-label="Logout"
+        >
+          <LogOut className="h-5 w-5 mr-3" />
+          <span>Logout</span>
+        </Button>
+      </div>
     </aside>
   );
 }

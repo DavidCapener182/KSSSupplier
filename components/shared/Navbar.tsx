@@ -209,6 +209,16 @@ export function Navbar() {
                   <span className="hidden md:inline">Settings</span>
                 </Button>
               </Link>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => logout()} 
+                className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 text-xs md:text-sm" 
+                aria-label="Logout"
+              >
+                <LogOut className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Logout</span>
+              </Button>
             </>
           )}
         </div>

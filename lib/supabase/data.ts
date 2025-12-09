@@ -15,6 +15,7 @@ import type {
   Notification,
   OnboardingDocument,
   DocumentComment,
+  EventCheckIn,
 } from '@/lib/types';
 
 // Helper to transform database row to Event
@@ -24,6 +25,7 @@ function transformEvent(row: any): Event {
     name: row.name,
     location: row.location,
     date: row.date,
+    status: row.status,
     requirements: {
       managers: row.requirements_managers,
       supervisors: row.requirements_supervisors,
@@ -126,6 +128,7 @@ export async function updateEvent(id: string, updates: Partial<Event>): Promise<
   if (updates.name !== undefined) updateData.name = updates.name;
   if (updates.location !== undefined) updateData.location = updates.location;
   if (updates.date !== undefined) updateData.date = updates.date;
+  if (updates.status !== undefined) updateData.status = updates.status;
   if (updates.requirements) {
     updateData.requirements_managers = updates.requirements.managers;
     updateData.requirements_supervisors = updates.requirements.supervisors;
@@ -1515,4 +1518,26 @@ async function getAssignment(id: string): Promise<Assignment | null> {
   return transformAssignment(data);
 }
 
+// Event Check-Ins
+export async function getEventCheckIns(eventId: string): Promise<EventCheckIn[]> {
+  const { data, error } = await supabase
+    .from('event_checkins')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('check_in_time', { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getCheckInStats(eventId: string) {
+  const { count, error } = await supabase
+    .from('event_checkins')
+    .select('*', { count: 'exact', head: true })
+    .eq('event_id', eventId)
+    .eq('verified', true);
+
+  if (error) throw error;
+  return count || 0;
+}
 

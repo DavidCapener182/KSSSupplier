@@ -4,6 +4,8 @@ import { useParams } from 'next/navigation';
 import { useDataStore } from '@/lib/data-store';
 import { useEffect, useMemo, useState } from 'react';
 import { ProviderScorecard } from '@/components/admin/ProviderScorecard';
+import { ProviderHealthAndEngagement } from '@/components/admin/ProviderHealthAndEngagement';
+import { LazyBookingAlerts } from '@/components/admin/LazyBookingAlerts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft } from 'lucide-react';
@@ -140,8 +142,15 @@ export default function ProviderDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to Providers
         </Link>
-        <h1 className="text-3xl font-bold">{provider.company_name}</h1>
-        <p className="text-gray-600 mt-1">{provider.contact_email}</p>
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold">{provider.company_name}</h1>
+            <p className="text-gray-600 mt-1">{provider.contact_email}</p>
+          </div>
+          <div className="flex-shrink-0 w-80 space-y-4">
+            <LazyBookingAlerts providerId={provider.id} />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -183,7 +192,10 @@ export default function ProviderDetailPage() {
         </Card>
       </div>
 
-      <ProviderScorecard provider={provider} assignments={assignments} events={events} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <ProviderScorecard provider={provider} assignments={assignments} events={events} />
+        <ProviderHealthAndEngagement providerId={provider.id} />
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

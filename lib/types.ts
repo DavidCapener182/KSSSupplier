@@ -5,6 +5,7 @@ export interface Event {
   name: string;
   location: string;
   date: string;
+  status?: 'scheduled' | 'active' | 'completed' | 'cancelled';
   requirements: {
     managers: number;
     supervisors: number;
@@ -153,7 +154,7 @@ export interface ActivityLog {
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'assignment' | 'message' | 'invoice' | 'reminder' | 'system';
+  type: 'assignment' | 'message' | 'invoice' | 'reminder' | 'system' | 'double_booking';
   title: string;
   message: string;
   read: boolean;
@@ -185,3 +186,45 @@ export interface ProviderAvailability {
   created_at: string;
   updated_at: string;
 }
+
+export interface DoubleBookingAlert {
+  id: string;
+  event_id: string;
+  staff_detail_id_1: string;
+  staff_detail_id_2: string;
+  sia_number?: string;
+  staff_name?: string;
+  match_type: 'sia_number' | 'name_fuzzy';
+  similarity_score: number;
+  status: 'pending' | 'resolved' | 'ignored';
+  created_at: string;
+  updated_at: string;
+  
+  // Joined fields
+  event?: Event;
+  provider1_name?: string;
+  provider2_name?: string;
+}
+
+export interface EventCheckIn {
+  id: string;
+  event_id: string;
+  staff_detail_id?: string;
+  sia_number: string;
+  staff_name: string;
+  provider_id?: string;
+  check_in_time: string;
+  check_in_method: 'qr_scan' | 'manual_entry';
+  verified: boolean;
+  is_duplicate: boolean;
+  created_at: string;
+}
+
+export type ScanResult = {
+  success: boolean;
+  status: 'verified' | 'unlisted' | 'duplicate' | 'error';
+  staffName?: string;
+  providerName?: string;
+  timestamp: string;
+  message: string;
+};

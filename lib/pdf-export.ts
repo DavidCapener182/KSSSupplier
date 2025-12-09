@@ -2,6 +2,103 @@ import jsPDF from 'jspdf';
 import type { Event, Assignment, Provider, StaffDetail } from './types';
 import { format } from 'date-fns';
 import { extractRatesFromAgreement } from './rate-extractor';
+import { EventSuccessReportData } from './ai/post-event-report-generator';
+
+export function generateEventSuccessReportPDF(data: EventSuccessReportData): Blob {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  
+  // Header
+  doc.setFontSize(22);
+  doc.setTextColor(40, 40, 40);
+  doc.text('Event Success Report', pageWidth / 2, 20, { align: 'center' });
+  
+  doc.setFontSize(14);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`${data.eventName}`, pageWidth / 2, 30, { align: 'center' });
+  doc.text(`Date: ${format(new Date(data.date), 'MMMM dd, yyyy')}`, pageWidth / 2, 38, { align: 'center' });
+  
+  doc.setDrawColor(200, 200, 200);
+  doc.line(20, 45, pageWidth - 20, 45);
+  
+  // Executive Summary (Narrative)
+  let y = 55;
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Executive Summary', 20, y);
+  y += 10;
+  
+  doc.setFontSize(11);
+  doc.setTextColor(60, 60, 60);
+  const narrativeLines = doc.splitTextToSize(data.narrative, pageWidth - 40);
+  doc.text(narrativeLines, 20, y);
+  y += narrativeLines.length * 6 + 10;
+  
+  // Metrics Grid
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Performance Metrics', 20, y);
+  y += 10;
+  
+  const boxWidth = (pageWidth - 50) / 3;
+  const boxHeight = 25;
+  
+  // Box 1: Attendance
+  doc.setFillColor(240, 248, 255);
+  doc.rect(20, y, boxWidth, boxHeight, 'F');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Attendance Rate', 20 + boxWidth / 2, y + 8, { align: 'center' });
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`${data.metrics.attendanceRate.toFixed(1)}%`, 20 + boxWidth / 2, y + 18, { align: 'center' });
+  
+  // Box 2: Total Cost
+  doc.setFillColor(240, 255, 240);
+  doc.rect(20 + boxWidth + 5, y, boxWidth, boxHeight, 'F');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Total Cost', 20 + boxWidth + 5 + boxWidth / 2, y + 8, { align: 'center' });
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`£${data.metrics.totalCost.toLocaleString()}`, 20 + boxWidth + 5 + boxWidth / 2, y + 18, { align: 'center' });
+  
+  // Box 3: Issues
+  doc.setFillColor(255, 240, 240);
+  doc.rect(20 + (boxWidth + 5) * 2, y, boxWidth, boxHeight, 'F');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Issues Reported', 20 + (boxWidth + 5) * 2 + boxWidth / 2, y + 8, { align: 'center' });
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`${data.metrics.issueCount}`, 20 + (boxWidth + 5) * 2 + boxWidth / 2, y + 18, { align: 'center' });
+  
+  y += boxHeight + 15;
+  
+  // Detailed Financials
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Financial Overview', 20, y);
+  y += 10;
+  
+  doc.setFontSize(11);
+  doc.setTextColor(60, 60, 60);
+  doc.text(`Total Budget: £${data.metrics.budget.toLocaleString()}`, 20, y);
+  y += 7;
+  doc.text(`Actual Cost: £${data.metrics.totalCost.toLocaleString()}`, 20, y);
+  y += 7;
+  
+  const varianceColor = data.metrics.variance > 0 ? [200, 0, 0] : [0, 150, 0];
+  doc.setTextColor(varianceColor[0], varianceColor[1], varianceColor[2]);
+  doc.text(`Variance: ${data.metrics.variance > 0 ? '+' : ''}£${data.metrics.variance.toLocaleString()}`, 20, y);
+  
+  // Footer
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150);
+  doc.text(`Generated on ${format(new Date(), 'MMM dd, yyyy HH:mm')}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+  
+  return doc.output('blob');
+}
 
 export function generateEventSummaryPDF(
   event: Event,

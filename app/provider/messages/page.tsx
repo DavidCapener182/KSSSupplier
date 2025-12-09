@@ -19,14 +19,40 @@ export default function ProviderMessagesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Find admin user ID from existing messages
+  // Find admin user ID
   useEffect(() => {
     async function findAdminUser() {
       if (!user) return;
       
       setIsLoading(true);
       try {
-        // Try to get admin user ID from existing messages
+        // Get session token for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        // First, try to get admin user ID from API endpoint
+        const res = await fetch('/api/admin-user-id', {
+          method: 'GET',
+          headers,
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data.adminUserId) {
+            setAdminUserId(data.adminUserId);
+            // Load messages once we have admin ID
+            await loadMessages(user.id, data.adminUserId);
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          console.error('Failed to get admin user ID from API:', res.status, await res.text());
+        }
+        
+        // Fallback: Try to get admin user ID from existing messages
         const adminId = await supabaseData.getAdminUserId(user.id);
         if (adminId) {
           setAdminUserId(adminId);
