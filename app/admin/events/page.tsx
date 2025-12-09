@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import { Plus, Calendar, X, Download, Trash2, Copy, MapPin, Users } from 'lucide-react';
 import { exportEventsToCSV, downloadCSV } from '@/lib/export';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Checkbox } from '@/components/shared/Checkbox';
 import { DateRangePicker } from '@/components/shared/DateRangePicker';
@@ -283,17 +284,22 @@ export default function EventsPage() {
               </Button>
             </>
           )}
-          <Button
-            variant="outline"
-            onClick={() => {
-              const csv = exportEventsToCSV(events, assignments, []);
-              downloadCSV(csv, `events-${format(new Date(), 'yyyy-MM-dd')}.csv`);
-            }}
-            className="bg-background hover:bg-accent"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  const csv = exportEventsToCSV(events, assignments, []);
+                  downloadCSV(csv, `events-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+                }}
+                className="bg-background hover:bg-accent"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Export CSV</TooltipContent>
+          </Tooltip>
           <Link href="/admin/events/new">
             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
               <Plus className="h-4 w-4 mr-2" />
@@ -370,9 +376,9 @@ export default function EventsPage() {
                 Showing {filteredEvents.length} of {eventsWithStatus.length} events
               </div>
             </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[65vh]">
             <Table>
-              <TableHeader className="bg-muted/50">
+              <TableHeader className="bg-muted/50 sticky top-0 z-10 shadow-sm">
                 <TableRow className="hover:bg-transparent border-border">
                   <TableHead className="w-12 text-center">
                     <Checkbox
@@ -380,14 +386,13 @@ export default function EventsPage() {
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
-                  <TableHead className="min-w-[200px] font-semibold text-foreground">Event Name</TableHead>
+                  <TableHead className="min-w-[140px] font-semibold text-foreground">Event Name</TableHead>
                   <TableHead className="min-w-[140px] font-semibold text-foreground">Date</TableHead>
-                  <TableHead className="min-w-[160px] font-semibold text-foreground">Location</TableHead>
+                  <TableHead className="min-w-[200px] font-semibold text-foreground">Location</TableHead>
                   <TableHead className="min-w-[180px] font-semibold text-foreground">Staffing Status</TableHead>
                   <TableHead className="min-w-[120px] font-semibold text-foreground">Assignments</TableHead>
                   <TableHead className="min-w-[160px] font-semibold text-foreground">Provider Availability</TableHead>
                   <TableHead className="min-w-[120px] font-semibold text-foreground">Status</TableHead>
-                  <TableHead className="min-w-[120px] text-right font-semibold text-foreground">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -434,17 +439,22 @@ export default function EventsPage() {
                           onCheckedChange={() => handleSelectEvent(event.id)}
                         />
                       </TableCell>
-                      <TableCell className="font-medium text-foreground">{event.name}</TableCell>
+                      <TableCell className="font-medium text-foreground max-w-[140px] whitespace-normal break-words">{event.name}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2 text-muted-foreground">
                           <Calendar className="h-3.5 w-3.5" />
-                          <span className="text-sm">{format(new Date(event.date), 'MMM dd, yyyy')}</span>
+                          <span className="text-sm">
+                            {event.end_date 
+                              ? `${format(new Date(event.date), 'MMM dd')} - ${format(new Date(event.end_date), 'MMM dd, yyyy')}`
+                              : format(new Date(event.date), 'MMM dd, yyyy')
+                            }
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center space-x-2 text-muted-foreground">
-                          <MapPin className="h-3.5 w-3.5" />
-                          <span className="text-sm truncate max-w-[140px]" title={event.location}>{event.location}</span>
+                        <div className="flex items-start space-x-2 text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm whitespace-normal break-words max-w-[200px]" title={event.location}>{event.location}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -524,18 +534,11 @@ export default function EventsPage() {
                           <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-transparent">Needs Staff</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/admin/events/${event.id}`}>
-                          <Button variant="ghost" size="sm" className="hover:bg-accent text-primary hover:text-primary/80 font-medium">
-                            Details
-                          </Button>
-                        </Link>
-                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="p-0">
+                  <TableCell colSpan={7} className="p-0">
                     <EmptyState
                       icon={Calendar}
                       title="No Events Found"

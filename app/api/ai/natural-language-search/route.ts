@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
-import { generateSQL, validateSQL } from '@/lib/ai/text-to-sql';
+import { generateSQL, validateSQL, generateAnswerFromResults } from '@/lib/ai/text-to-sql';
 
 export async function POST(request: Request) {
   const startTime = Date.now();
@@ -45,9 +45,13 @@ export async function POST(request: Request) {
       throw new Error(`SQL execution failed: ${error.message || error.details || 'Unknown error'}`);
     }
 
-    // 4. Log success
-    const duration = Date.now() - startTime;
     const results = data || [];
+
+    // 4. Generate AI answer from results
+    const aiAnswer = await generateAnswerFromResults(query, generatedSql, results);
+    
+    // 5. Log success
+    const duration = Date.now() - startTime;
     
     await supabase.from('search_queries').insert({
       user_id: userId,
@@ -59,7 +63,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       sql: generatedSql,
-      results: results
+      results: results,
+      answer: aiAnswer
     });
 
   } catch (error: any) {
@@ -79,3 +84,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

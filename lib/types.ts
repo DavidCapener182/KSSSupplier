@@ -5,6 +5,7 @@ export interface Event {
   name: string;
   location: string;
   date: string;
+  end_date?: string;
   status?: 'scheduled' | 'active' | 'completed' | 'cancelled';
   requirements: {
     managers: number;
@@ -12,6 +13,15 @@ export interface Event {
     sia: number;
     stewards: number;
   };
+  daily_requirements?: {
+    date: string;
+    requirements: {
+      managers: number;
+      supervisors: number;
+      sia: number;
+      stewards: number;
+    };
+  }[];
   created_at: string;
   updated_at: string;
 }
@@ -115,7 +125,7 @@ export interface Invoice {
   provider_id: string;
   file_path: string | null; // Can be null for proformas
   amount: number | null;
-  status: 'pending' | 'approved' | 'paid' | 'proforma';
+  status: 'pending' | 'approved' | 'paid' | 'proforma' | 'outstanding';
   created_at: string;
   payment_date?: string;
 }

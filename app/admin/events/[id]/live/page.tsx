@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { createWorker } from 'tesseract.js';
-import { processScan, processStewardCheckIn, ScanResult, getCheckInStats, getCheckInStatistics, getVerifiedCheckIns, getRecentScans, deleteCheckIns, type CheckInStatistics, type VerifiedCheckIn, type RecentScan } from '@/app/actions/gatekeeper-actions';
+import { processScan, processStewardCheckIn, ScanResult, getCheckInStats, getCheckInStatistics, getVerifiedCheckIns, getRecentScans, deleteCheckIns, type CheckInStatistics, type VerifiedCheckIn, type RecentScan } from '@/app/actions/checkpoint-actions';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, Trash2, X } from 'lucide-react';
 import { useParams } from 'next/navigation';
@@ -47,7 +48,7 @@ const playBeep = (type: 'success' | 'error' | 'warning') => {
   osc.stop(ctx.currentTime + 0.3);
 };
 
-export default function LiveGatekeeperPage() {
+export default function LiveCheckPointPage() {
   const params = useParams();
   const id = params.id as string;
   
@@ -677,7 +678,16 @@ export default function LiveGatekeeperPage() {
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
             </Link>
-            <h1 className="text-xl font-bold">Gatekeeper</h1>
+            <Image 
+                src="/CheckPoint.png?v=1" 
+                alt="CheckPoint" 
+                width={300} 
+                height={80}
+                className="h-12 w-auto"
+                style={{ background: 'transparent' }}
+                priority
+                unoptimized
+            />
          </div>
          <div className="text-sm font-mono">
             Count: <span className="font-bold">{checkInCount}</span>

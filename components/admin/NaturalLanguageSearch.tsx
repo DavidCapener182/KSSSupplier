@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Loader2, Database, AlertCircle, Download } from 'lucide-react';
+import { Search, Loader2, Database, AlertCircle, Download, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/lib/supabase/client';
 
@@ -12,6 +12,7 @@ export function NaturalLanguageSearch() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [sql, setSql] = useState('');
+  const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -22,6 +23,7 @@ export function NaturalLanguageSearch() {
     setError('');
     setResults([]);
     setSql('');
+    setAnswer('');
 
     try {
       // Get session token for authentication
@@ -43,6 +45,7 @@ export function NaturalLanguageSearch() {
 
       setResults(data.results || []);
       setSql(data.sql);
+      setAnswer(data.answer || '');
 
     } catch (err: any) {
       setError(err.message);
@@ -129,6 +132,29 @@ export function NaturalLanguageSearch() {
         </Alert>
       )}
 
+      {answer && !error && (
+        <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/20 dark:to-card border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-1">
+                <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">KSS Answer</h3>
+                <div 
+                  className="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm max-w-none
+                    prose-headings:text-blue-900 dark:prose-headings:text-blue-100
+                    prose-strong:text-blue-900 dark:prose-strong:text-blue-100
+                    prose-ul:text-gray-700 dark:prose-ul:text-gray-300
+                    prose-li:text-gray-700 dark:prose-li:text-gray-300"
+                  dangerouslySetInnerHTML={{ __html: answer }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {sql && !error && (
         <div className="bg-slate-900 text-slate-300 p-3 rounded-md font-mono text-xs overflow-x-auto">
           <div className="flex items-center gap-2 mb-1 text-slate-500 uppercase font-bold text-[10px]">
@@ -184,3 +210,4 @@ export function NaturalLanguageSearch() {
     </div>
   );
 }
+

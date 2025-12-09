@@ -323,11 +323,16 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground mt-2">Overview of your event staffing operations</p>
         </div>
         <div className="hidden md:block">
-          <Link href="/admin/calendar">
-            <Button className="bg-primary hover:bg-primary/90 text-white shadow-md">
-              <Calendar className="mr-2 h-4 w-4" /> View Calendar
-            </Button>
-          </Link>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/admin/calendar">
+                <Button variant="outline" size="icon" className="text-primary border-primary/20 hover:bg-primary/5 shadow-sm">
+                  <Calendar className="h-5 w-5" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>View Calendar</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

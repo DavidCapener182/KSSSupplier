@@ -45,18 +45,18 @@ export function DoubleBookingAlerts({ eventId, initialAlerts = [] }: DoubleBooki
       setAlerts(data.conflicts || []);
       
       if (showToast) {
-        if (data.count > 0) {
-          toast({
-            title: "Conflicts Detected",
-            description: `Found ${data.count} potential double bookings.`,
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "All Clear",
-            description: "No double bookings detected.",
-            variant: "success"
-          });
+      if (data.count > 0) {
+        toast({
+          title: "Conflicts Detected",
+          description: `Found ${data.count} potential double bookings.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "All Clear",
+          description: "No double bookings detected.",
+          variant: "success"
+        });
         }
       }
     } catch (error) {
@@ -64,11 +64,11 @@ export function DoubleBookingAlerts({ eventId, initialAlerts = [] }: DoubleBooki
       // Set empty alerts on error so component doesn't break
       setAlerts([]);
       if (showToast) {
-        toast({
-          title: "Error",
-          description: "Failed to check for double bookings.",
-          variant: "destructive"
-        });
+      toast({
+        title: "Error",
+        description: "Failed to check for double bookings.",
+        variant: "destructive"
+      });
       }
     } finally {
       setLoading(false);

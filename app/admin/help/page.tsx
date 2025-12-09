@@ -23,7 +23,13 @@ import {
   MoreHorizontal,
   Download,
   Filter,
-  CheckCircle
+  CheckCircle,
+  Camera,
+  Search,
+  QrCode,
+  Clock,
+  ArrowLeft,
+  Edit
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -102,10 +108,22 @@ export default function HelpPage() {
                     <p><strong>Creating Events:</strong></p>
                     <ol className="list-decimal list-inside space-y-1 ml-2">
                       <li>Go to Events → Create Event</li>
-                      <li>Enter event name, location, and date</li>
+                      <li>Enter event name, location, and start date</li>
+                      <li>For multi-day events (e.g., festivals), click "Add End Date" to specify the event duration</li>
                       <li>Specify staff requirements (Managers, Supervisors, SIA, Stewards)</li>
+                      <li>For multi-day events, you can set different requirements for each day using the day tabs</li>
                       <li>Save the event</li>
                     </ol>
+                    <p className="mt-2"><strong>Multi-Day Events:</strong></p>
+                    <p className="ml-2">
+                      Events can span multiple days (e.g., festivals). When you add an end date:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 ml-4">
+                      <li>The event date range will display as "Start Date - End Date"</li>
+                      <li>Staff requirements can be set per day using tabs (Day 1, Day 2, etc.)</li>
+                      <li>When updating staff times, shifts will be labeled by day (e.g., "Day 1 - Jun 18, 2026")</li>
+                      <li>The Staff Requirements section shows tabs for each day with required vs. assigned staff</li>
+                    </ul>
                     <p className="mt-2"><strong>Event Templates:</strong></p>
                     <p className="ml-2">
                       Save time by creating templates for recurring events. Go to <strong>Events → Templates</strong> to manage them. You can then "Create from Template" when making a new event.
@@ -116,6 +134,19 @@ export default function HelpPage() {
                       <li>Click "Assign Provider"</li>
                       <li>Select a provider and specify staff numbers</li>
                       <li>The provider will receive a notification</li>
+                    </ol>
+                    <p className="mt-2"><strong>CheckPoint - Live Event Check-In:</strong></p>
+                    <p className="ml-2">
+                      Use CheckPoint to scan staff in at venue gates during live events:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 ml-4">
+                      <li>On the event detail page, click the CheckPoint logo to start live check-in</li>
+                      <li>The event status will change from "scheduled" to "active"</li>
+                      <li>Use the camera to scan SIA badge barcodes or the front of cards (OCR)</li>
+                      <li>Staff are verified against the event's staff list</li>
+                      <li>View real-time statistics: staff booked, scanned correctly, duplicates, and rejected</li>
+                      <li>Manually check in stewards using the "Steward" tab</li>
+                      <li>Recent scans persist and can be edited/deleted</li>
                     </ol>
                   </div>
                 </AccordionContent>
@@ -211,14 +242,50 @@ export default function HelpPage() {
                   </div>
                 </AccordionContent>
               </AccordionItem>
+              <AccordionItem value="data-search">
+                <AccordionTrigger>
+                  <div className="flex items-center gap-2">
+                    <Search className="h-4 w-4" />
+                    <span>Data Search with KSS Answer</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Natural Language Data Search:</strong></p>
+                    <p className="ml-2">
+                      Use the Data Search page to query your database using plain English questions.
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>Navigate to <strong>Data Search</strong> in the sidebar</li>
+                      <li>Type your question in plain English (e.g., "How many times do we have Lewis Capaldi?")</li>
+                      <li>Click "Search" to generate results</li>
+                      <li>View the <strong>KSS Answer</strong> - an AI-generated natural language explanation of the results</li>
+                      <li>Review the generated SQL query that was used</li>
+                      <li>See the raw data results in a table format</li>
+                    </ol>
+                    <p className="mt-2"><strong>KSS Answer:</strong></p>
+                    <p className="ml-2">
+                      The KSS Answer provides a human-readable explanation of your query results, formatted with HTML for easy reading. It interprets the SQL results and presents them in a clear, natural language format.
+                    </p>
+                    <p className="mt-2"><strong>Example Queries:</strong></p>
+                    <ul className="list-disc list-inside space-y-1 ml-4">
+                      <li>"Show approved providers in London"</li>
+                      <li>"List pending assignments next month"</li>
+                      <li>"Count staff by provider for Reading Festival"</li>
+                      <li>"How many events do we have in June 2026?"</li>
+                    </ul>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="events" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
+        <TabsList className="grid w-full grid-cols-5 lg:w-[750px]">
           <TabsTrigger value="events">Events</TabsTrigger>
+          <TabsTrigger value="checkpoint">CheckPoint</TabsTrigger>
           <TabsTrigger value="providers">Providers</TabsTrigger>
           <TabsTrigger value="finance">Finance</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -254,6 +321,84 @@ export default function HelpPage() {
                   <p className="text-sm text-muted-foreground mt-1">
                     Track the status as providers accept the assignment and upload their staff lists.
                   </p>
+                </div>
+              </div>
+
+              <Separator className="my-6" />
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Multi-Day Events
+                </h3>
+                <div className="space-y-3 text-sm">
+                  <p className="text-muted-foreground">
+                    Events can span multiple days (e.g., festivals, conferences). When creating or editing an event, you can add an end date to make it a multi-day event.
+                  </p>
+                  <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+                    <p><strong>Key Features:</strong></p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Set different staff requirements for each day</li>
+                      <li>View requirements per day using tabs (Day 1, Day 2, etc.)</li>
+                      <li>Update staff times with day-specific labels</li>
+                      <li>Date range displays as "Start Date - End Date" throughout the system</li>
+                    </ul>
+                  </div>
+                  <p className="text-muted-foreground">
+                    <strong>To create a multi-day event:</strong> Click "Add End Date" when creating or editing an event, then set staff requirements for each day using the day tabs.
+                  </p>
+                </div>
+              </div>
+
+              <Separator className="my-6" />
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <QrCode className="h-5 w-5" />
+                  CheckPoint - Live Event Check-In
+                </h3>
+                <div className="space-y-3 text-sm">
+                  <p className="text-muted-foreground">
+                    CheckPoint is a mobile-optimized live check-in system for scanning staff at venue gates during events. It verifies SIA badges and creates a digital record of attendance.
+                  </p>
+                  <div className="bg-slate-50 p-4 rounded-lg space-y-3">
+                    <div>
+                      <p className="font-medium mb-1">Starting CheckPoint:</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>Navigate to the event detail page</li>
+                        <li>Click the CheckPoint logo (appears when event is active)</li>
+                        <li>Or click "Start Live Event" to activate the event first</li>
+                        <li>You'll be redirected to the CheckPoint scanning page</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-1">Scanning Methods:</p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li><strong>Barcode Scanning:</strong> Scan the barcode on SIA badges</li>
+                        <li><strong>OCR (Optical Character Recognition):</strong> Scan the front of the SIA card to extract the SIA number</li>
+                        <li><strong>Manual Entry:</strong> Enter SIA number manually if scanning fails</li>
+                        <li><strong>Steward Check-In:</strong> Use the "Steward" tab to manually check in stewards by name and provider</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-1">Scan Results:</p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li><strong>Green:</strong> Verified - Staff member is on the event's staff list</li>
+                        <li><strong>Red:</strong> Rejected - Staff member is not on the list</li>
+                        <li><strong>Amber:</strong> Duplicate - Same badge scanned within 5 minutes</li>
+                        <li><strong>Yellow:</strong> Steward - Manually checked in steward</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-1">Statistics & Monitoring:</p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>View real-time counts: Staff booked, scanned correctly, duplicates, rejected</li>
+                        <li>See detailed verified scans with full name, SIA badge number, expiry date, shift times, and provider</li>
+                        <li>Recent scans persist and can be edited/deleted</li>
+                        <li>All scans (verified, rejected, duplicates) appear in recent scans</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -310,6 +455,289 @@ export default function HelpPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* CHECKPOINT TAB */}
+        <TabsContent value="checkpoint" className="space-y-6 mt-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold tracking-tight">CheckPoint - Live Event Check-In</h2>
+              <p className="text-muted-foreground">
+                CheckPoint is a mobile-optimized live check-in system for scanning staff at venue gates during events. It verifies SIA badges and creates a digital record of attendance.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Getting Started</h3>
+                  <ol className="list-decimal list-inside space-y-1 text-sm ml-2">
+                    <li>Navigate to an event detail page</li>
+                    <li>Click the CheckPoint logo or "Start Live Event" button</li>
+                    <li>The event status changes from "scheduled" to "active"</li>
+                    <li>You'll be redirected to the CheckPoint scanning page</li>
+                    <li>Allow camera permissions when prompted</li>
+                  </ol>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">Scanning Methods</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <QrCode className="h-4 w-4 mt-0.5 text-primary" />
+                      <div>
+                        <strong>Barcode Scanning:</strong> Scan the barcode on SIA badges using your device camera
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Camera className="h-4 w-4 mt-0.5 text-primary" />
+                      <div>
+                        <strong>OCR (Optical Character Recognition):</strong> Scan the front of the SIA card to extract the SIA number automatically
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <FileText className="h-4 w-4 mt-0.5 text-primary" />
+                      <div>
+                        <strong>Manual Entry:</strong> Enter SIA number manually if scanning fails
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Users className="h-4 w-4 mt-0.5 text-primary" />
+                      <div>
+                        <strong>Steward Check-In:</strong> Use the "Steward" tab to manually check in stewards by name and provider
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">Scan Results</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span><strong>Green (Verified):</strong> Staff member is on the event's staff list</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <span><strong>Red (Rejected):</strong> Staff member is not on the list</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                      <span><strong>Amber (Duplicate):</strong> Same badge scanned within 5 minutes</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <span><strong>Yellow (Steward):</strong> Manually checked in steward</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">Features</h3>
+                  <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                    <li>Real-time statistics: Staff booked, scanned correctly, duplicates, rejected</li>
+                    <li>Detailed verified scans with full name, SIA badge number, expiry date, shift times, and provider</li>
+                    <li>Recent scans persist and can be edited/deleted</li>
+                    <li>Audio feedback for scan results</li>
+                    <li>Mobile-optimized layout for use at venue gates</li>
+                    <li>Desktop layout with camera/stats on left, recent scans on right</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Mockups */}
+            <div className="space-y-4">
+              <Card className="bg-slate-50 border-dashed">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">PREVIEW: CheckPoint Interface</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Header Mock */}
+                  <div className="bg-white rounded-lg border shadow-sm p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ArrowLeft className="h-4 w-4 text-gray-400" />
+                      <div className="h-6 w-32 bg-gray-200 rounded"></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">Count: <strong>12</strong></span>
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                        ● LIVE
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Camera Viewport Mock */}
+                  <div className="bg-black rounded-lg border-2 border-gray-300 aspect-video flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-black"></div>
+                    <div className="relative z-10 text-center text-white">
+                      <Camera className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-xs opacity-75">Camera View</p>
+                    </div>
+                    <div className="absolute inset-0 border-2 border-dashed border-white/30 m-8 rounded"></div>
+                  </div>
+
+                  {/* Manual Entry Tabs Mock */}
+                  <div className="bg-white rounded-lg border shadow-sm p-3">
+                    <div className="flex gap-2 mb-3">
+                      <Button variant="default" size="sm" className="text-xs flex-1">Manual SIA Entry</Button>
+                      <Button variant="outline" size="sm" className="text-xs flex-1">Steward</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Enter SIA Number Manually</Label>
+                      <div className="flex gap-2">
+                        <Input placeholder="1017 0487 7704 6490" className="text-xs h-8" />
+                        <Button size="sm" className="text-xs h-8">Check In</Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Result Card Mock - Verified */}
+                  <div className="bg-green-100 border-2 border-green-300 rounded-xl p-4 text-center">
+                    <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                    <h3 className="text-lg font-bold text-green-800 uppercase mb-1">VERIFIED</h3>
+                    <p className="text-sm font-mono bg-white/50 px-2 py-1 rounded border mb-1">SIA: 101704877046490</p>
+                    <p className="font-semibold">John Smith</p>
+                    <p className="text-xs opacity-75">Top Tier Security</p>
+                  </div>
+
+                  {/* Statistics Mock */}
+                  <div className="bg-white rounded-lg border shadow-sm p-3">
+                    <h4 className="text-xs font-semibold mb-2 uppercase tracking-wider">Statistics</h4>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <p className="text-gray-500">Staff Booked</p>
+                        <p className="text-sm font-bold">58</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">In Provider Lists</p>
+                        <p className="text-sm font-bold">55</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Scanned Correctly</p>
+                        <p className="text-sm font-bold text-green-600">42</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Duplicates</p>
+                        <p className="text-sm font-bold text-amber-600">3</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-gray-500">Rejected</p>
+                        <p className="text-sm font-bold text-red-600">10</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent Scans Mock */}
+                  <div className="bg-white rounded-lg border shadow-sm p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-xs font-medium uppercase tracking-wider">Recent Scans</h4>
+                      <Button variant="ghost" size="sm" className="h-6 text-xs">
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-green-50 border border-green-200 rounded p-2 text-xs">
+                        <div className="flex items-center gap-1 mb-1">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <p className="font-medium truncate">John Smith</p>
+                        </div>
+                        <p className="text-xs font-mono text-gray-600 truncate">SIA: 101704877046490</p>
+                        <p className="text-xs text-gray-500 truncate">Top Tier Security</p>
+                        <p className="text-xs text-gray-400 mt-1">14:32</p>
+                      </div>
+                      <div className="bg-red-50 border border-red-200 rounded p-2 text-xs">
+                        <div className="flex items-center gap-1 mb-1">
+                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                          <p className="font-medium truncate">Unknown Staff</p>
+                        </div>
+                        <p className="text-xs font-mono text-gray-600 truncate">SIA: 202112345678901</p>
+                        <p className="text-xs text-gray-500 truncate">Not on list</p>
+                        <p className="text-xs text-gray-400 mt-1">14:28</p>
+                      </div>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs">
+                        <div className="flex items-center gap-1 mb-1">
+                          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                          <p className="font-medium truncate">Jane Doe</p>
+                        </div>
+                        <p className="text-xs font-semibold text-yellow-700 truncate">STEWARD</p>
+                        <p className="text-xs text-gray-500 truncate">Event Staff Ltd</p>
+                        <p className="text-xs text-gray-400 mt-1">14:25</p>
+                      </div>
+                      <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs">
+                        <div className="flex items-center gap-1 mb-1">
+                          <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                          <p className="font-medium truncate">Mike Johnson</p>
+                        </div>
+                        <p className="text-xs font-mono text-gray-600 truncate">SIA: 101704877046490</p>
+                        <p className="text-xs text-gray-500 truncate">Duplicate</p>
+                        <p className="text-xs text-gray-400 mt-1">14:20</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Verified Check-Ins List Mock */}
+              <Card className="bg-slate-50 border-dashed">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">PREVIEW: Verified Check-Ins</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-white rounded-lg border shadow-sm p-3 space-y-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider mb-2">Verified Check-Ins</h4>
+                    <div className="space-y-2">
+                      <div className="border rounded-lg p-3 text-xs">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="font-semibold">John Smith</p>
+                            <p className="font-mono text-gray-600 mt-1">SIA: 101704877046490</p>
+                          </div>
+                          <span className="text-gray-400">14:32</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                          <div>
+                            <p className="text-gray-500">Expiry Date</p>
+                            <p className="font-medium">18/06/2027</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">Shift Time</p>
+                            <p className="font-medium">09:00 - 17:00</p>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t">
+                          <p className="text-gray-500">Provider</p>
+                          <p className="font-medium">Top Tier Security</p>
+                        </div>
+                      </div>
+                      <div className="border rounded-lg p-3 text-xs">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="font-semibold">Sarah Williams</p>
+                            <p className="font-mono text-gray-600 mt-1">SIA: 202112345678901</p>
+                          </div>
+                          <span className="text-gray-400">14:25</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                          <div>
+                            <p className="text-gray-500">Expiry Date</p>
+                            <p className="font-medium">15/09/2026</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">Shift Time</p>
+                            <p className="font-medium">10:00 - 18:00</p>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t">
+                          <p className="text-gray-500">Provider</p>
+                          <p className="font-medium">Event Staff Ltd</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
 
@@ -405,8 +833,21 @@ export default function HelpPage() {
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold tracking-tight">Finance Overview</h2>
               <p className="text-muted-foreground">
-                Manage incoming invoices and issue proformas.
+                Manage incoming invoices, issue proformas, and track payment status.
               </p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Invoice Status Management
+                </h3>
+                <p className="text-xs text-muted-foreground mb-2">
+                  <strong>Proforma Invoices:</strong> Can be marked as "Paid" using the "Mark Paid" button.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  <strong>Auto-Status Update:</strong> Proforma invoices automatically change to "Outstanding" if not marked as paid within 30 days after the event's end date.
+                </p>
+              </div>
               
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="invoice-1">
@@ -419,6 +860,18 @@ export default function HelpPage() {
                   <AccordionTrigger>Issuing Proformas</AccordionTrigger>
                   <AccordionContent className="text-muted-foreground text-sm">
                     You can create a proforma invoice request for a provider. This sends them a notification to generate a bill for a specific amount.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="invoice-4">
+                  <AccordionTrigger>Marking Proformas as Paid</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-sm">
+                    For proforma invoices, you can mark them as "Paid" using the "Mark Paid" button. This updates the invoice status and helps track payment completion.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="invoice-5">
+                  <AccordionTrigger>Outstanding Invoice Status</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-sm">
+                    Proforma invoices automatically change to "Outstanding" status if they haven't been marked as paid within 30 days after the event's end date. This helps identify invoices that need attention.
                   </AccordionContent>
                 </AccordionItem>
                  <AccordionItem value="invoice-3">
@@ -488,6 +941,33 @@ export default function HelpPage() {
                     <p className="text-xs text-muted-foreground mt-1">Reliability ratings per supplier.</p>
                   </div>
                </div>
+
+              <Separator className="my-4" />
+
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Search className="h-5 w-5" />
+                  Data Search with KSS Answer
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Query your database using natural language and receive AI-powered answers.
+                </p>
+                <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm">
+                  <p><strong>How it works:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1 ml-2">
+                    <li>Type your question in plain English</li>
+                    <li>AI generates SQL and executes the query</li>
+                    <li>KSS Answer provides a natural language explanation</li>
+                    <li>View the generated SQL and raw results</li>
+                  </ol>
+                  <p className="mt-2"><strong>Example queries:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-xs">
+                    <li>"How many events do we have in June?"</li>
+                    <li>"Show all providers in London"</li>
+                    <li>"Count staff by provider for Reading Festival"</li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
             {/* Visual Mock for Reports */}
@@ -605,6 +1085,30 @@ export default function HelpPage() {
               <Link href="/admin/settings">
                 <span className="text-sm text-primary hover:underline">Go to Settings →</span>
               </Link>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold">Search Your Data</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Use natural language to query your database and get AI-powered answers.
+              </p>
+              <Link href="/admin/data-search">
+                <span className="text-sm text-primary hover:underline">Go to Data Search →</span>
+              </Link>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Camera className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold">Use CheckPoint</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Start live event check-in to scan staff at venue gates.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Navigate to an active event and click the CheckPoint logo.
+              </p>
             </div>
           </div>
         </CardContent>

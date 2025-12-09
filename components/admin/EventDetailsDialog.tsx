@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -10,10 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { format } from 'date-fns';
-import type { Event, Assignment, Provider } from '@/lib/types';
+import { format, addDays, differenceInDays, parseISO } from 'date-fns';
+import type { Event, Assignment, Provider, StaffTimes } from '@/lib/types';
 import { MapPin, Calendar, Mail, Phone, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { useDataStore } from '@/lib/data-store';
 
 interface EventDetailsDialogProps {
   event: Event | null;
@@ -32,7 +34,45 @@ export function EventDetailsDialog({
 }: EventDetailsDialogProps) {
   if (!event) return null;
 
+  const { getStaffTimesByAssignment } = useDataStore();
   const eventAssignments = assignments.filter((a) => a.event_id === event.id);
+  
+  // Calculate assigned staff per day based on staff times
+  const calculateAssignedPerDay = (dayIndex: number) => {
+    const shiftNumber = dayIndex + 1;
+    let assigned = { managers: 0, supervisors: 0, sia: 0, stewards: 0 };
+    
+    eventAssignments.forEach((assignment) => {
+      const staffTimes = getStaffTimesByAssignment(assignment.id);
+      staffTimes.forEach((time) => {
+        if (time.shift_number === shiftNumber) {
+          const role = time.role_type as keyof typeof assigned;
+          if (role in assigned) {
+            assigned[role] += time.staff_count;
+          }
+        }
+      });
+    });
+    
+    return assigned;
+  };
+
+  // Get requirements for a specific day
+  const getDayRequirements = (dayIndex: number) => {
+    if (!event.daily_requirements || event.daily_requirements.length === 0) {
+      return event.requirements;
+    }
+    
+    if (!event.end_date) return event.requirements;
+    
+    const startDate = parseISO(event.date);
+    const dayDate = format(addDays(startDate, dayIndex), 'yyyy-MM-dd');
+    const dailyReq = event.daily_requirements.find(dr => dr.date === dayDate);
+    
+    return dailyReq?.requirements || event.requirements;
+  };
+
+  // Calculate total assigned (for single day events or overall)
   const totalAssigned = eventAssignments.reduce(
     (acc, a) => ({
       managers: acc.managers + a.assigned_managers,
@@ -46,6 +86,130 @@ export function EventDetailsDialog({
   const confirmed = eventAssignments.filter((a) => a.status === 'accepted').length;
   const pending = eventAssignments.filter((a) => a.status === 'pending').length;
   const declined = eventAssignments.filter((a) => a.status === 'declined').length;
+
+  // Check if multi-day event
+  const isMultiDay = !!event.end_date;
+  const daysCount = isMultiDay && event.end_date
+    ? differenceInDays(parseISO(event.end_date), parseISO(event.date)) + 1 
+    : 1;
+
+  // Render requirements card
+  const renderRequirementsCard = (requirements: typeof event.requirements, assigned: typeof totalAssigned, dayLabel?: string) => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Staff Requirements{dayLabel ? ` - ${dayLabel}` : ''}</CardTitle>
+        <CardDescription>Required vs Currently Assigned</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {requirements.managers > 0 && (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Managers</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold">{assigned.managers}</p>
+                <span className="text-sm text-muted-foreground">
+                  / {requirements.managers}
+                </span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full ${
+                    assigned.managers >= requirements.managers
+                      ? 'bg-green-500'
+                      : 'bg-yellow-500'
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (assigned.managers / requirements.managers) * 100,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          {requirements.supervisors > 0 && (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Supervisors</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold">{assigned.supervisors}</p>
+                <span className="text-sm text-muted-foreground">
+                  / {requirements.supervisors}
+                </span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full ${
+                    assigned.supervisors >= requirements.supervisors
+                      ? 'bg-green-500'
+                      : 'bg-yellow-500'
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (assigned.supervisors / requirements.supervisors) * 100,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          {requirements.sia > 0 && (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">SIA Licensed</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold">{assigned.sia}</p>
+                <span className="text-sm text-muted-foreground">
+                  / {requirements.sia}
+                </span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full ${
+                    assigned.sia >= requirements.sia
+                      ? 'bg-green-500'
+                      : 'bg-yellow-500'
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (assigned.sia / requirements.sia) * 100,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          {requirements.stewards > 0 && (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Stewards</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold">{assigned.stewards}</p>
+                <span className="text-sm text-muted-foreground">
+                  / {requirements.stewards}
+                </span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full ${
+                    assigned.stewards >= requirements.stewards
+                      ? 'bg-green-500'
+                      : 'bg-yellow-500'
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (assigned.stewards / requirements.stewards) * 100,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,7 +228,10 @@ export function EventDetailsDialog({
                 <span>Event Date</span>
               </div>
               <p className="font-medium">
-                {format(new Date(event.date), 'EEEE, MMMM dd, yyyy')}
+                {event.end_date 
+                  ? `${format(new Date(event.date), 'MMM dd')} - ${format(new Date(event.end_date), 'MMM dd, yyyy')}`
+                  : format(new Date(event.date), 'EEEE, MMMM dd, yyyy')
+                }
               </p>
             </div>
             <div className="space-y-2">
@@ -77,120 +244,38 @@ export function EventDetailsDialog({
           </div>
 
           {/* Staff Requirements vs Assigned */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Staff Requirements</CardTitle>
-              <CardDescription>Required vs Currently Assigned</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {event.requirements.managers > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Managers</p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-bold">{totalAssigned.managers}</p>
-                      <span className="text-sm text-muted-foreground">
-                        / {event.requirements.managers}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${
-                          totalAssigned.managers >= event.requirements.managers
-                            ? 'bg-green-500'
-                            : 'bg-yellow-500'
-                        }`}
-                        style={{
-                          width: `${Math.min(
-                            (totalAssigned.managers / event.requirements.managers) * 100,
-                            100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-                {event.requirements.supervisors > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Supervisors</p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-bold">{totalAssigned.supervisors}</p>
-                      <span className="text-sm text-muted-foreground">
-                        / {event.requirements.supervisors}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${
-                          totalAssigned.supervisors >= event.requirements.supervisors
-                            ? 'bg-green-500'
-                            : 'bg-yellow-500'
-                        }`}
-                        style={{
-                          width: `${Math.min(
-                            (totalAssigned.supervisors / event.requirements.supervisors) * 100,
-                            100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-                {event.requirements.sia > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">SIA Licensed</p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-bold">{totalAssigned.sia}</p>
-                      <span className="text-sm text-muted-foreground">
-                        / {event.requirements.sia}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${
-                          totalAssigned.sia >= event.requirements.sia
-                            ? 'bg-green-500'
-                            : 'bg-yellow-500'
-                        }`}
-                        style={{
-                          width: `${Math.min(
-                            (totalAssigned.sia / event.requirements.sia) * 100,
-                            100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-                {event.requirements.stewards > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Stewards</p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-bold">{totalAssigned.stewards}</p>
-                      <span className="text-sm text-muted-foreground">
-                        / {event.requirements.stewards}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${
-                          totalAssigned.stewards >= event.requirements.stewards
-                            ? 'bg-green-500'
-                            : 'bg-yellow-500'
-                        }`}
-                        style={{
-                          width: `${Math.min(
-                            (totalAssigned.stewards / event.requirements.stewards) * 100,
-                            100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {isMultiDay ? (
+            <Tabs defaultValue="day-1" className="w-full">
+              <TabsList className="w-full justify-start overflow-x-auto h-auto flex-wrap gap-2">
+                {Array.from({ length: daysCount }).map((_, i) => {
+                  const dayDate = addDays(parseISO(event.date), i);
+                  return (
+                    <TabsTrigger 
+                      key={i} 
+                      value={`day-${i + 1}`}
+                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    >
+                      Day {i + 1} ({format(dayDate, 'dd MMM')})
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              {Array.from({ length: daysCount }).map((_, i) => {
+                const dayDate = addDays(parseISO(event.date), i);
+                const dayRequirements = getDayRequirements(i);
+                const dayAssigned = calculateAssignedPerDay(i);
+                const dayLabel = `Day ${i + 1} - ${format(dayDate, 'EEE dd MMM')}`;
+                
+                return (
+                  <TabsContent key={i} value={`day-${i + 1}`} className="mt-4">
+                    {renderRequirementsCard(dayRequirements, dayAssigned, dayLabel)}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          ) : (
+            renderRequirementsCard(event.requirements, totalAssigned)
+          )}
 
           {/* Provider Assignments */}
           <Card>

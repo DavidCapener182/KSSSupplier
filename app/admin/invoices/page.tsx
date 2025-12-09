@@ -7,7 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { format } from 'date-fns';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { format, addDays, differenceInDays, parseISO } from 'date-fns';
 import { useState, useMemo } from 'react';
 import { Download, X, FileText, PoundSterling, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -52,6 +57,41 @@ export default function InvoicesPage() {
     loadEvents();
     loadAssignments();
   }, [loadInvoices, loadProviders, loadEvents, loadAssignments]);
+
+  // Auto-update proforma invoices to outstanding after 30 days from event end date
+  useEffect(() => {
+    if (invoices.length === 0 || events.length === 0) return;
+    
+    const updateProformaToOutstanding = async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const updates: string[] = [];
+      
+      for (const invoice of invoices) {
+        if (invoice.status === 'proforma') {
+          const event = events.find((e) => e.id === invoice.event_id);
+          if (!event) continue;
+          
+          // Use end_date if available, otherwise use date
+          const eventEndDate = event.end_date ? parseISO(event.end_date) : parseISO(event.date);
+          const daysSinceEventEnd = differenceInDays(today, eventEndDate);
+          
+          // If 30 days or more have passed since event end, change to outstanding
+          if (daysSinceEventEnd >= 30) {
+            updates.push(invoice.id);
+          }
+        }
+      }
+      
+      // Batch update all invoices that need to be changed
+      if (updates.length > 0) {
+        await Promise.all(updates.map(id => updateInvoiceStatus(id, 'outstanding')));
+        await loadInvoices(); // Reload to update UI
+      }
+    };
+    
+    updateProformaToOutstanding();
+  }, [invoices, events, updateInvoiceStatus, loadInvoices]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -93,6 +133,9 @@ export default function InvoicesPage() {
         if (invoice.status === 'proforma') {
           acc.totalProformaValue += amount;
           acc.proformaCount += 1;
+        } else if (invoice.status === 'outstanding') {
+          acc.outstandingValue += amount;
+          acc.pendingCount += 1;
         } else {
           acc.totalInvoiceValue += amount;
           acc.invoiceCount += 1;
@@ -131,10 +174,11 @@ export default function InvoicesPage() {
     setCurrentPage(1);
   }, [searchQuery, statusFilter]);
 
-  const handleMarkAsPaid = (invoiceId: string) => {
+  const handleMarkAsPaid = async (invoiceId: string) => {
     const invoice = invoices.find((inv) => inv.id === invoiceId);
     const provider = invoice ? providers.find((p) => p.id === invoice.provider_id) : null;
-    updateInvoiceStatus(invoiceId, 'paid', new Date().toISOString());
+    await updateInvoiceStatus(invoiceId, 'paid', new Date().toISOString());
+    await loadInvoices(); // Reload to update UI
     toast({
       title: 'Invoice Marked as Paid',
       description: `Invoice from ${provider?.company_name || 'provider'} has been marked as paid.`,
@@ -216,17 +260,22 @@ export default function InvoicesPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Invoices</h1>
           <p className="text-muted-foreground mt-2">Manage provider invoices</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            const csv = exportInvoicesToCSV(invoices, events, providers);
-            downloadCSV(csv, `invoices-${format(new Date(), 'yyyy-MM-dd')}.csv`);
-          }}
-          className="bg-background hover:bg-accent"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Export CSV
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const csv = exportInvoicesToCSV(invoices, events, providers);
+                downloadCSV(csv, `invoices-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+              }}
+              className="bg-background hover:bg-accent"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Export CSV</TooltipContent>
+        </Tooltip>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
@@ -306,6 +355,7 @@ export default function InvoicesPage() {
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="paid">Paid</SelectItem>
                     <SelectItem value="proforma">Proforma</SelectItem>
+                    <SelectItem value="outstanding">Outstanding</SelectItem>
                   </SelectContent>
                 </Select>
                 {(searchQuery || statusFilter !== 'all') && (
@@ -365,6 +415,8 @@ export default function InvoicesPage() {
                           <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-transparent">Paid</Badge>
                         ) : invoice.status === 'proforma' ? (
                           <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-transparent">Proforma</Badge>
+                        ) : invoice.status === 'outstanding' ? (
+                          <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-transparent">Outstanding</Badge>
                         ) : (
                           <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-transparent">Pending</Badge>
                         )}
@@ -382,18 +434,48 @@ export default function InvoicesPage() {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end space-x-2">
                           {invoice.status === 'proforma' ? (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewProforma(invoice);
-                              }}
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewProforma(invoice);
+                                }}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMarkAsPaid(invoice.id);
+                                }}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Mark Paid
+                              </Button>
+                            </>
+                          ) : invoice.status === 'outstanding' ? (
+                            <>
+                              <Button variant="ghost" size="sm" className="text-muted-foreground hover:bg-accent">
+                                <Download className="h-4 w-4 mr-1" />
+                                PDF
+                              </Button>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                                onClick={() => handleMarkAsPaid(invoice.id)}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Mark Paid
+                              </Button>
+                            </>
                           ) : (
                             <>
                               <Button variant="ghost" size="sm" className="text-muted-foreground hover:bg-accent">

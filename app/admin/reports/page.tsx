@@ -128,13 +128,13 @@ export default function ReportsPage() {
 
       {/* Filters */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <CardTitle>Report Filters</CardTitle>
           <CardDescription>Configure your report parameters</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
+        <CardContent>
+          <div className="flex flex-col lg:flex-row gap-6 lg:items-end">
+            <div className="space-y-2 lg:w-1/5">
               <Label>Report Type</Label>
               <Select value={reportType} onValueChange={(value: any) => setReportType(value)}>
                 <SelectTrigger>
@@ -149,13 +149,13 @@ export default function ReportsPage() {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 lg:w-2/5">
               <Label>Date Range</Label>
-              <div className="flex items-end gap-2">
-                <div className="space-y-2 flex-1">
-                  <Label className="text-xs">From</Label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
                   <Input
                     type="date"
+                    placeholder="From"
                     value={dateRange ? format(dateRange.from, 'yyyy-MM-dd') : ''}
                     onChange={(e) => {
                       if (e.target.value) {
@@ -164,12 +164,14 @@ export default function ReportsPage() {
                         setDateRange({ from, to });
                       }
                     }}
+                    className="w-full"
                   />
                 </div>
-                <div className="space-y-2 flex-1">
-                  <Label className="text-xs">To</Label>
+                <span className="text-gray-400">-</span>
+                <div className="flex-1">
                   <Input
                     type="date"
+                    placeholder="To"
                     value={dateRange ? format(dateRange.to, 'yyyy-MM-dd') : ''}
                     min={dateRange ? format(dateRange.from, 'yyyy-MM-dd') : undefined}
                     onChange={(e) => {
@@ -177,21 +179,13 @@ export default function ReportsPage() {
                         setDateRange({ ...dateRange, to: new Date(e.target.value) });
                       }
                     }}
+                    className="w-full"
                   />
                 </div>
-                {dateRange && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDateRange(null)}
-                  >
-                    Clear
-                  </Button>
-                )}
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 lg:w-1/5">
               <Label>Provider</Label>
               <Select value={selectedProvider} onValueChange={setSelectedProvider}>
                 <SelectTrigger>
@@ -207,26 +201,24 @@ export default function ReportsPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="flex gap-2">
-            <Button onClick={handleExport} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button onClick={() => window.print()} variant="outline" className="print-keep">
-              <Printer className="h-4 w-4 mr-2" />
-              Print Report
-            </Button>
-            {dateRange && (
-              <Button
-                variant="ghost"
-                onClick={() => setDateRange(null)}
-                className="text-sm"
-              >
-                Clear Date Range
+            <div className="flex gap-2 lg:ml-auto lg:w-auto">
+              <Button onClick={handleExport} variant="outline" size="icon" title="Export CSV">
+                <Download className="h-4 w-4" />
               </Button>
-            )}
+              <Button onClick={() => window.print()} variant="outline" size="icon" className="print-keep" title="Print Report">
+                <Printer className="h-4 w-4" />
+              </Button>
+              {dateRange && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setDateRange(null)}
+                  className="text-sm px-2"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

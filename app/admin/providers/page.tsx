@@ -12,6 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -307,18 +312,22 @@ export default function ProvidersPage() {
           <p className="text-muted-foreground mt-2">Manage labour provider companies</p>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
-          <Button
-            variant="outline"
-            onClick={() => {
-              const csv = exportAssignmentsToCSV(assignments, events, providers);
-              downloadCSV(csv, `assignments-${format(new Date(), 'yyyy-MM-dd')}.csv`);
-            }}
-            className="bg-background hover:bg-accent flex-shrink-0"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Export Assignments</span>
-            <span className="sm:hidden">Export</span>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  const csv = exportAssignmentsToCSV(assignments, events, providers);
+                  downloadCSV(csv, `assignments-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+                }}
+                className="bg-background hover:bg-accent flex-shrink-0"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Export Assignments</TooltipContent>
+          </Tooltip>
           
           <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
             <DialogTrigger asChild>

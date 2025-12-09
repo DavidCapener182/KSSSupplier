@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { ArrowLeft, HelpCircle, FileText } from 'lucide-react';
+import { ArrowLeft, HelpCircle, FileText, Plus, Minus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Tooltip,
@@ -26,6 +26,8 @@ export default function NewEventPage() {
     name: '',
     location: '',
     date: '',
+    end_date: '',
+    show_end_date: false,
     managers: '0',
     supervisors: '0',
     sia: '0',
@@ -52,6 +54,13 @@ export default function NewEventPage() {
       today.setHours(0, 0, 0, 0);
       if (selectedDate < today) {
         newErrors.date = 'Event date cannot be in the past';
+      }
+
+      if (formData.show_end_date && formData.end_date) {
+        const endDate = new Date(formData.end_date);
+        if (endDate < selectedDate) {
+          newErrors.end_date = 'End date cannot be before start date';
+        }
       }
     }
 
@@ -89,6 +98,7 @@ export default function NewEventPage() {
       name: formData.name.trim(),
       location: formData.location.trim(),
       date: formData.date,
+      end_date: formData.show_end_date ? formData.end_date : undefined,
       requirements: {
         managers: parseInt(formData.managers) || 0,
         supervisors: parseInt(formData.supervisors) || 0,
@@ -173,20 +183,69 @@ export default function NewEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date">Event Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => {
-                  setFormData({ ...formData, date: e.target.value });
-                  if (errors.date) setErrors({ ...errors, date: '' });
-                }}
-                required
-                min={new Date().toISOString().split('T')[0]}
-                className={errors.date ? 'border-red-500' : ''}
-              />
-              {errors.date && <p className="text-sm text-red-600">{errors.date}</p>}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="date">Event Date</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const newValue = !formData.show_end_date;
+                    setFormData({ 
+                      ...formData, 
+                      show_end_date: newValue,
+                      end_date: newValue ? formData.date : '' 
+                    });
+                  }}
+                  className="h-auto p-0 text-primary hover:text-primary/80"
+                >
+                  {formData.show_end_date ? (
+                    <>
+                      <Minus className="h-3 w-3 mr-1" />
+                      Remove End Date
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add End Date
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => {
+                      setFormData({ ...formData, date: e.target.value });
+                      if (errors.date) setErrors({ ...errors, date: '' });
+                    }}
+                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    className={errors.date ? 'border-red-500' : ''}
+                  />
+                  {errors.date && <p className="text-sm text-red-600">{errors.date}</p>}
+                </div>
+                {formData.show_end_date && (
+                  <div className="space-y-2">
+                    <Input
+                      id="end_date"
+                      type="date"
+                      value={formData.end_date}
+                      onChange={(e) => {
+                        setFormData({ ...formData, end_date: e.target.value });
+                        if (errors.end_date) setErrors({ ...errors, end_date: '' });
+                      }}
+                      required={formData.show_end_date}
+                      min={formData.date || new Date().toISOString().split('T')[0]}
+                      className={errors.end_date ? 'border-red-500' : ''}
+                    />
+                    {errors.end_date && <p className="text-sm text-red-600">{errors.end_date}</p>}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4">

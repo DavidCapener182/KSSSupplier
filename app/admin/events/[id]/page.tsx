@@ -41,11 +41,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { format, differenceInDays, isSameDay, parseISO } from 'date-fns';
+import { format, differenceInDays, isSameDay, parseISO, addDays } from 'date-fns';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, Plus, Upload, FileText, Edit, Trash2, Calendar, HelpCircle, Download, Printer, FileBarChart, Play, Square, QrCode } from 'lucide-react';
 import { generateEventSummaryPDF, generateInvoicePDF, generatePncSiaPDF } from '@/lib/pdf-export';
-import { startEvent, stopEvent } from '@/app/actions/gatekeeper-actions';
+import { startEvent, stopEvent } from '@/app/actions/checkpoint-actions';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
@@ -194,12 +195,14 @@ export default function EventDetailPage() {
         name: editFormData.name.trim(),
         location: editFormData.location.trim(),
         date: editFormData.date,
+        end_date: editFormData.show_end_date ? editFormData.end_date : undefined,
         requirements: {
           managers: parseInt(editFormData.managers) || 0,
           supervisors: parseInt(editFormData.supervisors) || 0,
           sia: parseInt(editFormData.sia) || 0,
           stewards: parseInt(editFormData.stewards) || 0,
         },
+        daily_requirements: editFormData.show_end_date ? editFormData.daily_requirements : [],
       });
       
       // Reload events to ensure UI is in sync
@@ -210,10 +213,13 @@ export default function EventDetailPage() {
         name: updatedEvent.name,
         location: updatedEvent.location,
         date: updatedEvent.date,
+        end_date: updatedEvent.end_date || '',
+        show_end_date: !!updatedEvent.end_date,
         managers: updatedEvent.requirements.managers.toString(),
         supervisors: updatedEvent.requirements.supervisors.toString(),
         sia: updatedEvent.requirements.sia.toString(),
         stewards: updatedEvent.requirements.stewards.toString(),
+        daily_requirements: updatedEvent.daily_requirements || [],
       });
       
       setIsEditDialogOpen(false);
@@ -347,10 +353,21 @@ export default function EventDetailPage() {
     name: '',
     location: '',
     date: '',
+    end_date: '',
+    show_end_date: false,
     managers: '0',
     supervisors: '0',
     sia: '0',
     stewards: '0',
+    daily_requirements: [] as {
+      date: string;
+      requirements: {
+        managers: number;
+        supervisors: number;
+        sia: number;
+        stewards: number;
+      };
+    }[],
   });
 
   // Find event - will be undefined until data loads
@@ -364,7 +381,9 @@ export default function EventDetailPage() {
       await startEvent(id);
       toast({ title: "Event Started", description: "Event is now active.", variant: "success" });
       setIsStartEventDialogOpen(false);
-      loadEvents(); 
+      loadEvents();
+      // Navigate to live page after starting event
+      router.push(`/admin/events/${id}/live`);
     } catch (e: any) {
       toast({ title: "Error", description: e.message || "Failed to start event", variant: "destructive" });
     }
@@ -400,10 +419,13 @@ export default function EventDetailPage() {
         name: event.name,
         location: event.location,
         date: event.date,
+        end_date: event.end_date || '',
+        show_end_date: !!event.end_date,
         managers: event.requirements.managers.toString(),
         supervisors: event.requirements.supervisors.toString(),
         sia: event.requirements.sia.toString(),
         stewards: event.requirements.stewards.toString(),
+        daily_requirements: event.daily_requirements || [],
       });
     }
   }, [event]);
@@ -1022,18 +1044,29 @@ export default function EventDetailPage() {
               {event.status === 'cancelled' && <Badge variant="destructive">Cancelled</Badge>}
             </div>
             <p className="text-sm sm:text-base text-gray-600 mt-1">
-              {format(new Date(event.date), 'MMMM dd, yyyy')} • {event.location}
+              {event.end_date 
+                ? `${format(new Date(event.date), 'MMM dd')} - ${format(new Date(event.end_date), 'MMM dd, yyyy')}`
+                : format(new Date(event.date), 'MMMM dd, yyyy')
+              } • {event.location}
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           {event.status === 'active' ? (
             <>
-              <Link href={`/admin/events/${id}/live`}>
-                <Button className="bg-green-600 hover:bg-green-700 text-white" size="sm">
-                  <QrCode className="h-4 w-4 mr-2" />
-                  Gatekeeper Mode
-                </Button>
+              <Link href={`/admin/events/${id}/live`} className="flex items-center">
+                <button className="hover:opacity-80 transition-opacity flex items-center">
+                  <Image 
+                    src="/CheckPoint.png?v=1" 
+                    alt="CheckPoint Mode" 
+                    width={200} 
+                    height={60}
+                    className="h-12 w-auto"
+                    style={{ background: 'transparent' }}
+                    priority
+                    unoptimized
+                  />
+                </button>
               </Link>
               <Button 
                 variant="outline" 
@@ -1140,53 +1173,223 @@ export default function EventDetailPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Event Date</Label>
-                  <Input
-                    type="date"
-                    value={editFormData.date}
-                    onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label>Event Date</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const newValue = !editFormData.show_end_date;
+                        setEditFormData({ 
+                          ...editFormData, 
+                          show_end_date: newValue,
+                          end_date: newValue ? editFormData.date : '' 
+                        });
+                      }}
+                      className="h-auto p-0 text-primary hover:text-primary/80"
+                    >
+                      {editFormData.show_end_date ? 'Remove End Date' : 'Add End Date'}
+                    </Button>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Input
+                      type="date"
+                      value={editFormData.date}
+                      onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+                    />
+                    {editFormData.show_end_date && (
+                      <Input
+                        type="date"
+                        value={editFormData.end_date}
+                        min={editFormData.date}
+                        onChange={(e) => setEditFormData({ ...editFormData, end_date: e.target.value })}
+                      />
+                    )}
+                  </div>
                 </div>
+
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Staff Requirements</h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <div className="space-y-2">
-                      <Label>Managers</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={editFormData.managers}
-                        onChange={(e) => setEditFormData({ ...editFormData, managers: e.target.value })}
-                      />
+                  
+                  {!editFormData.show_end_date ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      <div className="space-y-2">
+                        <Label>Managers</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editFormData.managers}
+                          onChange={(e) => setEditFormData({ ...editFormData, managers: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Supervisors</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editFormData.supervisors}
+                          onChange={(e) => setEditFormData({ ...editFormData, supervisors: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>SIA Licensed</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editFormData.sia}
+                          onChange={(e) => setEditFormData({ ...editFormData, sia: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Stewards</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editFormData.stewards}
+                          onChange={(e) => setEditFormData({ ...editFormData, stewards: e.target.value })}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Supervisors</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={editFormData.supervisors}
-                        onChange={(e) => setEditFormData({ ...editFormData, supervisors: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>SIA Licensed</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={editFormData.sia}
-                        onChange={(e) => setEditFormData({ ...editFormData, sia: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Stewards</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={editFormData.stewards}
-                        onChange={(e) => setEditFormData({ ...editFormData, stewards: e.target.value })}
-                      />
-                    </div>
-                  </div>
+                  ) : (
+                    <Tabs defaultValue="day-1" className="w-full">
+                      <TabsList className="w-full justify-start overflow-x-auto h-auto flex-wrap gap-2 bg-transparent p-0">
+                        {(() => {
+                          if (!editFormData.date || !editFormData.end_date) return null;
+                          const start = parseISO(editFormData.date);
+                          const end = parseISO(editFormData.end_date);
+                          const days = differenceInDays(end, start) + 1;
+                          
+                          return Array.from({ length: Math.max(1, days) }).map((_, i) => (
+                            <TabsTrigger 
+                              key={i} 
+                              value={`day-${i + 1}`}
+                              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground border bg-background"
+                            >
+                              Day {i + 1} ({format(addDays(start, i), 'dd MMM')})
+                            </TabsTrigger>
+                          ));
+                        })()}
+                      </TabsList>
+                      {(() => {
+                        if (!editFormData.date || !editFormData.end_date) return null;
+                        const start = parseISO(editFormData.date);
+                        const end = parseISO(editFormData.end_date);
+                        const days = differenceInDays(end, start) + 1;
+                        
+                        return Array.from({ length: Math.max(1, days) }).map((_, i) => {
+                          const currentDate = format(addDays(start, i), 'yyyy-MM-dd');
+                          const dailyReq = editFormData.daily_requirements?.find(r => r.date === currentDate) || {
+                            requirements: {
+                              managers: parseInt(editFormData.managers) || 0,
+                              supervisors: parseInt(editFormData.supervisors) || 0,
+                              sia: parseInt(editFormData.sia) || 0,
+                              stewards: parseInt(editFormData.stewards) || 0,
+                            }
+                          };
+
+                          return (
+                            <TabsContent key={i} value={`day-${i + 1}`} className="pt-4">
+                              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                <div className="space-y-2">
+                                  <Label>Managers</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={dailyReq.requirements.managers}
+                                    onChange={(e) => {
+                                      const newReqs = [...(editFormData.daily_requirements || [])];
+                                      const existingIndex = newReqs.findIndex(r => r.date === currentDate);
+                                      const val = parseInt(e.target.value) || 0;
+                                      
+                                      if (existingIndex >= 0) {
+                                        newReqs[existingIndex].requirements.managers = val;
+                                      } else {
+                                        newReqs.push({
+                                          date: currentDate,
+                                          requirements: { ...dailyReq.requirements, managers: val }
+                                        });
+                                      }
+                                      setEditFormData({ ...editFormData, daily_requirements: newReqs });
+                                    }}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Supervisors</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={dailyReq.requirements.supervisors}
+                                    onChange={(e) => {
+                                      const newReqs = [...(editFormData.daily_requirements || [])];
+                                      const existingIndex = newReqs.findIndex(r => r.date === currentDate);
+                                      const val = parseInt(e.target.value) || 0;
+                                      
+                                      if (existingIndex >= 0) {
+                                        newReqs[existingIndex].requirements.supervisors = val;
+                                      } else {
+                                        newReqs.push({
+                                          date: currentDate,
+                                          requirements: { ...dailyReq.requirements, supervisors: val }
+                                        });
+                                      }
+                                      setEditFormData({ ...editFormData, daily_requirements: newReqs });
+                                    }}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>SIA Licensed</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={dailyReq.requirements.sia}
+                                    onChange={(e) => {
+                                      const newReqs = [...(editFormData.daily_requirements || [])];
+                                      const existingIndex = newReqs.findIndex(r => r.date === currentDate);
+                                      const val = parseInt(e.target.value) || 0;
+                                      
+                                      if (existingIndex >= 0) {
+                                        newReqs[existingIndex].requirements.sia = val;
+                                      } else {
+                                        newReqs.push({
+                                          date: currentDate,
+                                          requirements: { ...dailyReq.requirements, sia: val }
+                                        });
+                                      }
+                                      setEditFormData({ ...editFormData, daily_requirements: newReqs });
+                                    }}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Stewards</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={dailyReq.requirements.stewards}
+                                    onChange={(e) => {
+                                      const newReqs = [...(editFormData.daily_requirements || [])];
+                                      const existingIndex = newReqs.findIndex(r => r.date === currentDate);
+                                      const val = parseInt(e.target.value) || 0;
+                                      
+                                      if (existingIndex >= 0) {
+                                        newReqs[existingIndex].requirements.stewards = val;
+                                      } else {
+                                        newReqs.push({
+                                          date: currentDate,
+                                          requirements: { ...dailyReq.requirements, stewards: val }
+                                        });
+                                      }
+                                      setEditFormData({ ...editFormData, daily_requirements: newReqs });
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </TabsContent>
+                          );
+                        })
+                      })()}
+                    </Tabs>
+                  )}
                 </div>
               </div>
               <DialogFooter>
@@ -1419,36 +1622,114 @@ export default function EventDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {event.requirements.managers > 0 && (
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{totalAssigned.managers}/{event.requirements.managers}</div>
-                    <div className="text-sm text-gray-600">Managers</div>
+              {(() => {
+                // Helper to calculate assigned staff per day
+                const calculateAssignedPerDay = (dayIndex: number) => {
+                  const shiftNumber = dayIndex + 1;
+                  let assigned = { managers: 0, supervisors: 0, sia: 0, stewards: 0 };
+                  
+                  eventAssignments.forEach((assignment) => {
+                    const staffTimes = getStaffTimesByAssignment(assignment.id);
+                    staffTimes.forEach((time) => {
+                      if (time.shift_number === shiftNumber) {
+                        const role = time.role_type as keyof typeof assigned;
+                        if (role in assigned) {
+                          assigned[role] += time.staff_count;
+                        }
+                      }
+                    });
+                  });
+                  
+                  return assigned;
+                };
+
+                // Helper to get requirements for a specific day
+                const getDayRequirements = (dayIndex: number) => {
+                  if (!event.daily_requirements || event.daily_requirements.length === 0) {
+                    return event.requirements;
+                  }
+                  
+                  if (!event.end_date) return event.requirements;
+                  
+                  const startDate = parseISO(event.date);
+                  const dayDate = format(addDays(startDate, dayIndex), 'yyyy-MM-dd');
+                  const dailyReq = event.daily_requirements.find(dr => dr.date === dayDate);
+                  
+                  return dailyReq?.requirements || event.requirements;
+                };
+
+                const isMultiDay = !!event.end_date;
+                const daysCount = isMultiDay && event.end_date
+                  ? differenceInDays(parseISO(event.end_date), parseISO(event.date)) + 1 
+                  : 1;
+
+                // Render requirements cards
+                const renderRequirementsCards = (requirements: typeof event.requirements, assigned: typeof totalAssigned) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    {requirements.managers > 0 && (
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold">{assigned.managers}/{requirements.managers}</div>
+                        <div className="text-sm text-gray-600">Managers</div>
+                      </div>
+                    )}
+                    {requirements.supervisors > 0 && (
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold">
+                          {assigned.supervisors}/{requirements.supervisors}
+                        </div>
+                        <div className="text-sm text-gray-600">Supervisors</div>
+                      </div>
+                    )}
+                    {requirements.sia > 0 && (
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold">{assigned.sia}/{requirements.sia}</div>
+                        <div className="text-sm text-gray-600">SIA Licensed</div>
+                      </div>
+                    )}
+                    {requirements.stewards > 0 && (
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold">
+                          {assigned.stewards}/{requirements.stewards}
+                        </div>
+                        <div className="text-sm text-gray-600">Stewards</div>
+                      </div>
+                    )}
                   </div>
-                )}
-                {event.requirements.supervisors > 0 && (
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">
-                      {totalAssigned.supervisors}/{event.requirements.supervisors}
-                    </div>
-                    <div className="text-sm text-gray-600">Supervisors</div>
-                  </div>
-                )}
-                {event.requirements.sia > 0 && (
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">{totalAssigned.sia}/{event.requirements.sia}</div>
-                    <div className="text-sm text-gray-600">SIA Licensed</div>
-                  </div>
-                )}
-                {event.requirements.stewards > 0 && (
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold">
-                      {totalAssigned.stewards}/{event.requirements.stewards}
-                    </div>
-                    <div className="text-sm text-gray-600">Stewards</div>
-                  </div>
-                )}
-              </div>
+                );
+
+                if (isMultiDay) {
+                  return (
+                    <Tabs defaultValue="day-1" className="w-full">
+                      <TabsList className="w-full justify-start overflow-x-auto h-auto flex-wrap gap-2 mb-4">
+                        {Array.from({ length: daysCount }).map((_, i) => {
+                          const dayDate = addDays(parseISO(event.date), i);
+                          return (
+                            <TabsTrigger 
+                              key={i} 
+                              value={`day-${i + 1}`}
+                              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                            >
+                              Day {i + 1} ({format(dayDate, 'dd MMM')})
+                            </TabsTrigger>
+                          );
+                        })}
+                      </TabsList>
+                      {Array.from({ length: daysCount }).map((_, i) => {
+                        const dayRequirements = getDayRequirements(i);
+                        const dayAssigned = calculateAssignedPerDay(i);
+                        
+                        return (
+                          <TabsContent key={i} value={`day-${i + 1}`}>
+                            {renderRequirementsCards(dayRequirements, dayAssigned)}
+                          </TabsContent>
+                        );
+                      })}
+                    </Tabs>
+                  );
+                } else {
+                  return renderRequirementsCards(event.requirements, totalAssigned);
+                }
+              })()}
 
               <div className="space-y-4">
                 <h3 className="font-semibold">Provider Assignments</h3>
@@ -1966,7 +2247,13 @@ export default function EventDetailPage() {
             {staffTimesShifts.map((shift, shiftIndex) => (
               <div key={shiftIndex} className="border rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Shift {shift.shift_number}</h4>
+                  <h4 className="font-medium">
+                    {event?.end_date ? (
+                      `Day ${shift.shift_number} - ${format(addDays(parseISO(event.date), shift.shift_number - 1), 'EEE dd MMM')}`
+                    ) : (
+                      `Shift ${shift.shift_number}`
+                    )}
+                  </h4>
                   <div className="flex gap-2">
                     <Button
                       type="button"

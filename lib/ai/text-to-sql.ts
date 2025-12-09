@@ -71,6 +71,72 @@ Now convert this request: "${naturalLanguageQuery}"`;
   }
 }
 
+export async function generateAnswerFromResults(
+  originalQuery: string,
+  sqlQuery: string,
+  results: any[]
+): Promise<string> {
+  try {
+    const resultsSummary = results.length > 0 
+      ? JSON.stringify(results.slice(0, 10), null, 2) // Limit to first 10 rows for context
+      : 'No results found';
+    
+    const prompt = `You are a helpful data analyst assistant. Based on the user's question and the SQL query results, provide a clear, concise, and natural language answer formatted as HTML.
+
+User's Question: "${originalQuery}"
+
+SQL Query Executed: ${sqlQuery}
+
+Query Results (first 10 rows):
+${resultsSummary}
+
+Total Results: ${results.length}
+
+Instructions:
+1. Answer the user's question directly and naturally
+2. Include specific numbers and data from the results
+3. If there are no results, explain why (e.g., "No events found matching that criteria")
+4. Be concise but informative
+5. Use plain English, avoid technical jargon
+6. If the results show counts or aggregations, present them clearly
+7. If there are multiple rows, summarize the key findings
+8. Format your answer as clean HTML:
+   - Use <p> tags for paragraphs
+   - Use <strong> or <b> for emphasis on numbers and key facts
+   - Use <ul> and <li> for lists
+   - Use <h3> or <h4> for section headings if needed
+   - Use <br/> for line breaks within paragraphs
+   - Do NOT use markdown, only HTML tags
+   - Keep the HTML simple and semantic
+
+Example format:
+<p>Based on the query results, <strong>3 events</strong> were found for Capener Security.</p>
+<ul>
+<li>Event 1: Name, Location, Date</li>
+<li>Event 2: Name, Location, Date</li>
+</ul>
+
+Provide your answer as HTML:`;
+
+    const completion = await openai.chat.completions.create({
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a helpful data analyst assistant. Provide clear, concise answers to user questions based on SQL query results. Format your answers as clean HTML using <p>, <strong>, <ul>, <li>, and <h3> tags. Do not use markdown, only HTML.' 
+        },
+        { role: 'user', content: prompt }
+      ],
+      model: 'gpt-4o-mini',
+      temperature: 0.3,
+    });
+
+    return completion.choices[0]?.message?.content || 'Unable to generate answer.';
+  } catch (error: any) {
+    console.error('Error generating answer:', error);
+    return 'Unable to generate AI answer at this time.';
+  }
+}
+
 export function validateSQL(sql: string): boolean {
   const upperSQL = sql.toUpperCase();
   
@@ -88,3 +154,4 @@ export function validateSQL(sql: string): boolean {
   
   return true;
 }
+

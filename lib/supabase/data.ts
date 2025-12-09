@@ -25,6 +25,7 @@ function transformEvent(row: any): Event {
     name: row.name,
     location: row.location,
     date: row.date,
+    end_date: row.end_date,
     status: row.status,
     requirements: {
       managers: row.requirements_managers,
@@ -32,6 +33,15 @@ function transformEvent(row: any): Event {
       sia: row.requirements_sia,
       stewards: row.requirements_stewards,
     },
+    daily_requirements: row.event_daily_requirements?.map((dr: any) => ({
+      date: dr.date,
+      requirements: {
+        managers: dr.requirements_managers,
+        supervisors: dr.requirements_supervisors,
+        sia: dr.requirements_sia,
+        stewards: dr.requirements_stewards,
+      }
+    })),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -83,7 +93,7 @@ function transformAssignment(row: any): Assignment {
 export async function getEvents(): Promise<Event[]> {
   const { data, error } = await supabase
     .from('events')
-    .select('*')
+    .select('*, event_daily_requirements(*)')
     .order('date', { ascending: true });
 
   if (error) throw error;
@@ -93,7 +103,7 @@ export async function getEvents(): Promise<Event[]> {
 export async function getEvent(id: string): Promise<Event | null> {
   const { data, error } = await supabase
     .from('events')
-    .select('*')
+    .select('*, event_daily_requirements(*)')
     .eq('id', id)
     .single();
 
@@ -111,6 +121,7 @@ export async function createEvent(event: Omit<Event, 'id' | 'created_at' | 'upda
       name: event.name,
       location: event.location,
       date: event.date,
+      end_date: event.end_date,
       requirements_managers: event.requirements.managers,
       requirements_supervisors: event.requirements.supervisors,
       requirements_sia: event.requirements.sia,
@@ -128,6 +139,7 @@ export async function updateEvent(id: string, updates: Partial<Event>): Promise<
   if (updates.name !== undefined) updateData.name = updates.name;
   if (updates.location !== undefined) updateData.location = updates.location;
   if (updates.date !== undefined) updateData.date = updates.date;
+  if (updates.end_date !== undefined) updateData.end_date = updates.end_date;
   if (updates.status !== undefined) updateData.status = updates.status;
   if (updates.requirements) {
     updateData.requirements_managers = updates.requirements.managers;
@@ -145,11 +157,32 @@ export async function updateEvent(id: string, updates: Partial<Event>): Promise<
     throw new Error('Event not found');
   }
 
+  // Handle daily requirements update
+  if (updates.daily_requirements) {
+    // Delete existing
+    await supabase.from('event_daily_requirements').delete().eq('event_id', id);
+    
+    // Insert new
+    if (updates.daily_requirements.length > 0) {
+      const { error: drError } = await supabase.from('event_daily_requirements').insert(
+        updates.daily_requirements.map(dr => ({
+          event_id: id,
+          date: dr.date,
+          requirements_managers: dr.requirements.managers,
+          requirements_supervisors: dr.requirements.supervisors,
+          requirements_sia: dr.requirements.sia,
+          requirements_stewards: dr.requirements.stewards,
+        }))
+      );
+      if (drError) throw drError;
+    }
+  }
+
   const { data: updateResult, error: updateError } = await supabase
     .from('events')
     .update(updateData)
     .eq('id', id)
-    .select('*');
+    .select('*, event_daily_requirements(*)');
 
   if (updateError) {
     console.error('Error updating event:', updateError);
@@ -965,7 +998,7 @@ export async function uploadInvoice(
   };
 }
 
-export async function updateInvoiceStatus(id: string, status: 'pending' | 'approved' | 'paid' | 'proforma', paymentDate?: string): Promise<Invoice> {
+export async function updateInvoiceStatus(id: string, status: 'pending' | 'approved' | 'paid' | 'proforma' | 'outstanding', paymentDate?: string): Promise<Invoice> {
   const updateData: any = { status };
   if (paymentDate) updateData.payment_date = paymentDate;
 
