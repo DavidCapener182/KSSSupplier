@@ -58,17 +58,17 @@ export default function InvoicesPage() {
     loadAssignments();
   }, [loadInvoices, loadProviders, loadEvents, loadAssignments]);
 
-  // Auto-update proforma invoices to outstanding after 30 days from event end date
+  // Auto-update purchase order invoices to outstanding after 30 days from event end date
   useEffect(() => {
     if (invoices.length === 0 || events.length === 0) return;
     
-    const updateProformaToOutstanding = async () => {
+    const updatePurchaseOrderToOutstanding = async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const updates: string[] = [];
       
       for (const invoice of invoices) {
-        if (invoice.status === 'proforma') {
+        if (invoice.status === 'purchase_order') {
           const event = events.find((e) => e.id === invoice.event_id);
           if (!event) continue;
           
@@ -90,15 +90,15 @@ export default function InvoicesPage() {
       }
     };
     
-    updateProformaToOutstanding();
+    updatePurchaseOrderToOutstanding();
   }, [invoices, events, updateInvoiceStatus, loadInvoices]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [selectedProforma, setSelectedProforma] = useState<Invoice | null>(null);
-  const [proformaHTML, setProformaHTML] = useState<string | null>(null);
-  const [isLoadingProforma, setIsLoadingProforma] = useState(false);
+  const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState<Invoice | null>(null);
+  const [purchaseOrderHTML, setPurchaseOrderHTML] = useState<string | null>(null);
+  const [isLoadingPurchaseOrder, setIsLoadingPurchaseOrder] = useState(false);
 
 
   const filteredInvoices = useMemo(() => {
@@ -130,9 +130,9 @@ export default function InvoicesPage() {
     return filteredInvoices.reduce(
       (acc, invoice) => {
         const amount = invoice.amount || 0;
-        if (invoice.status === 'proforma') {
-          acc.totalProformaValue += amount;
-          acc.proformaCount += 1;
+        if (invoice.status === 'purchase_order') {
+          acc.totalPurchaseOrderValue += amount;
+          acc.purchaseOrderCount += 1;
         } else if (invoice.status === 'outstanding') {
           acc.outstandingValue += amount;
           acc.pendingCount += 1;
@@ -150,11 +150,11 @@ export default function InvoicesPage() {
         return acc;
       },
       {
-        totalProformaValue: 0,
+        totalPurchaseOrderValue: 0,
         totalInvoiceValue: 0,
         paidValue: 0,
         outstandingValue: 0,
-        proformaCount: 0,
+        purchaseOrderCount: 0,
         invoiceCount: 0,
         paidCount: 0,
         pendingCount: 0,
@@ -186,10 +186,10 @@ export default function InvoicesPage() {
     });
   };
 
-  const handleViewProforma = async (invoice: Invoice) => {
-    setSelectedProforma(invoice);
-    setIsLoadingProforma(true);
-    setProformaHTML(null);
+  const handleViewPurchaseOrder = async (invoice: Invoice) => {
+    setSelectedPurchaseOrder(invoice);
+    setIsLoadingPurchaseOrder(true);
+    setPurchaseOrderHTML(null);
 
     try {
       const event = events.find((e) => e.id === invoice.event_id);
@@ -199,10 +199,10 @@ export default function InvoicesPage() {
       if (!event || !provider || !assignment) {
         toast({
           title: 'Error',
-          description: 'Could not find event, provider, or assignment for this proforma.',
+          description: 'Could not find event, provider, or assignment for this purchase order.',
           variant: 'destructive',
         });
-        setIsLoadingProforma(false);
+        setIsLoadingPurchaseOrder(false);
         return;
       }
 
@@ -232,24 +232,24 @@ export default function InvoicesPage() {
         });
       }
 
-      // Generate the proforma HTML
+      // Generate the purchase order HTML
       const htmlContent = generateInvoiceHTML(
         event,
         [assignment],
         [provider],
         staffTimesMap,
-        true, // Always proforma
+        true, // Always purchase order
         agreementContent
       );
-      setProformaHTML(htmlContent);
+      setPurchaseOrderHTML(htmlContent);
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to load proforma',
+        description: error.message || 'Failed to load purchase order',
         variant: 'destructive',
       });
     } finally {
-      setIsLoadingProforma(false);
+      setIsLoadingPurchaseOrder(false);
     }
   };
 
@@ -282,13 +282,13 @@ export default function InvoicesPage() {
         <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/20 dark:to-card h-full flex flex-col">
           <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <CardDescription className="text-blue-600 dark:text-blue-400 font-medium">Total Proforma</CardDescription>
+              <CardDescription className="text-blue-600 dark:text-blue-400 font-medium">Total Purchase Order</CardDescription>
               <FileText className="h-4 w-4 text-blue-500 dark:text-blue-400" />
             </div>
-            <CardTitle className="text-2xl font-bold text-foreground">{formatCurrency(invoiceTotals.totalProformaValue)}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-foreground">{formatCurrency(invoiceTotals.totalPurchaseOrderValue)}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            {invoiceTotals.proformaCount} proforma{invoiceTotals.proformaCount === 1 ? '' : 's'}
+            {invoiceTotals.purchaseOrderCount} purchase order{invoiceTotals.purchaseOrderCount === 1 ? '' : 's'}
           </CardContent>
         </Card>
         <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card h-full flex flex-col">
@@ -354,7 +354,7 @@ export default function InvoicesPage() {
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="proforma">Proforma</SelectItem>
+                    <SelectItem value="purchase_order">Purchase Order</SelectItem>
                     <SelectItem value="outstanding">Outstanding</SelectItem>
                   </SelectContent>
                 </Select>
@@ -398,10 +398,10 @@ export default function InvoicesPage() {
                     <TableRow 
                       key={invoice.id}
                       className={`
-                        ${invoice.status === 'proforma' ? 'cursor-pointer hover:bg-blue-50/30 dark:hover:bg-blue-900/20' : 'hover:bg-muted/50'} 
+                        ${invoice.status === 'purchase_order' ? 'cursor-pointer hover:bg-blue-50/30 dark:hover:bg-blue-900/20' : 'hover:bg-muted/50'} 
                         border-b border-border last:border-0 transition-colors
                       `}
-                      onClick={invoice.status === 'proforma' ? () => handleViewProforma(invoice) : undefined}
+                      onClick={invoice.status === 'purchase_order' ? () => handleViewPurchaseOrder(invoice) : undefined}
                     >
                       <TableCell className="font-medium text-foreground">
                         {event?.name || 'Unknown Event'}
@@ -413,8 +413,8 @@ export default function InvoicesPage() {
                       <TableCell>
                         {invoice.status === 'paid' ? (
                           <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-transparent">Paid</Badge>
-                        ) : invoice.status === 'proforma' ? (
-                          <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-transparent">Proforma</Badge>
+                        ) : invoice.status === 'purchase_order' ? (
+                          <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-transparent">Purchase Order</Badge>
                         ) : invoice.status === 'outstanding' ? (
                           <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-transparent">Outstanding</Badge>
                         ) : (
@@ -433,7 +433,7 @@ export default function InvoicesPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end space-x-2">
-                          {invoice.status === 'proforma' ? (
+                          {invoice.status === 'purchase_order' ? (
                             <>
                               <Button 
                                 variant="ghost" 
@@ -441,7 +441,7 @@ export default function InvoicesPage() {
                                 className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleViewProforma(invoice);
+                                  handleViewPurchaseOrder(invoice);
                                 }}
                               >
                                 <FileText className="h-4 w-4 mr-1" />
@@ -529,55 +529,55 @@ export default function InvoicesPage() {
         </CardContent>
       </Card>
 
-      {/* Proforma Dialog */}
-      <Dialog open={!!selectedProforma} onOpenChange={(open) => !open && setSelectedProforma(null)}>
+      {/* Purchase Order Dialog */}
+      <Dialog open={!!selectedPurchaseOrder} onOpenChange={(open) => !open && setSelectedPurchaseOrder(null)}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Proforma Invoice</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">Purchase Order Invoice</DialogTitle>
             <DialogDescription>
-              {selectedProforma && (
+              {selectedPurchaseOrder && (
                 <span className="flex items-center gap-2 mt-2 text-base">
-                  <span className="font-semibold text-gray-900">{events.find((e) => e.id === selectedProforma.event_id)?.name || 'Unknown Event'}</span>
+                  <span className="font-semibold text-gray-900">{events.find((e) => e.id === selectedPurchaseOrder.event_id)?.name || 'Unknown Event'}</span>
                   <span className="text-gray-400">•</span>
-                  <span className="text-gray-600">{providers.find((p) => p.id === selectedProforma.provider_id)?.company_name || 'Unknown Provider'}</span>
+                  <span className="text-gray-600">{providers.find((p) => p.id === selectedPurchaseOrder.provider_id)?.company_name || 'Unknown Provider'}</span>
                 </span>
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-6">
-            {isLoadingProforma ? (
+            {isLoadingPurchaseOrder ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading proforma invoice...</p>
+                  <p className="text-gray-500">Loading purchase order invoice...</p>
                 </div>
               </div>
-            ) : proformaHTML ? (
+            ) : purchaseOrderHTML ? (
               <div className="border rounded-xl shadow-inner bg-gray-50 p-6 overflow-auto max-h-[60vh]">
-                <div className="bg-white shadow-sm p-8 min-h-[800px] mx-auto max-w-[800px]" dangerouslySetInnerHTML={{ __html: proformaHTML }} />
+                <div className="bg-white shadow-sm p-8 min-h-[800px] mx-auto max-w-[800px]" dangerouslySetInnerHTML={{ __html: purchaseOrderHTML }} />
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                 <AlertCircle className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No proforma data available</p>
+                <p className="text-gray-500">No purchase order data available</p>
               </div>
             )}
           </div>
-          {proformaHTML && (
+          {purchaseOrderHTML && (
             <div className="mt-6 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setSelectedProforma(null)}>Close</Button>
+              <Button variant="outline" onClick={() => setSelectedPurchaseOrder(null)}>Close</Button>
               <Button
                 className="bg-primary hover:bg-primary/90"
                 onClick={async () => {
-                  if (!selectedProforma) return;
-                  const event = events.find((e) => e.id === selectedProforma.event_id);
-                  const provider = providers.find((p) => p.id === selectedProforma.provider_id);
-                  const assignment = assignments.find((a) => a.event_id === selectedProforma.event_id && a.provider_id === selectedProforma.provider_id);
+                  if (!selectedPurchaseOrder) return;
+                  const event = events.find((e) => e.id === selectedPurchaseOrder.event_id);
+                  const provider = providers.find((p) => p.id === selectedPurchaseOrder.provider_id);
+                  const assignment = assignments.find((a) => a.event_id === selectedPurchaseOrder.event_id && a.provider_id === selectedPurchaseOrder.provider_id);
                   
                   if (!event || !provider || !assignment) {
                     toast({
                       title: 'Error',
-                      description: 'Could not find event, provider, or assignment for this proforma.',
+                      description: 'Could not find event, provider, or assignment for this purchase order.',
                       variant: 'destructive',
                     });
                     return;

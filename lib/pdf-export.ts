@@ -465,14 +465,14 @@ export function generateInvoicePDF(
   assignments: Assignment[],
   providers: Provider[],
   staffTimesMap: Map<string, any[]>,
-  isProforma: boolean = false,
+  isPurchaseOrder: boolean = false,
   agreementContent?: string
 ): void {
-  const doc = buildInvoicePDF(event, assignments, providers, staffTimesMap, isProforma, agreementContent);
+  const doc = buildInvoicePDF(event, assignments, providers, staffTimesMap, isPurchaseOrder, agreementContent);
   
   // Save the PDF
-  const filename = isProforma
-    ? `proforma-${event.name.replace(/\s+/g, '-')}-${format(new Date(event.date), 'yyyy-MM-dd')}.pdf`
+  const filename = isPurchaseOrder
+    ? `purchase-order-${event.name.replace(/\s+/g, '-')}-${format(new Date(event.date), 'yyyy-MM-dd')}.pdf`
     : `invoice-${event.name.replace(/\s+/g, '-')}-${format(new Date(event.date), 'yyyy-MM-dd')}.pdf`;
   doc.save(filename);
 }
@@ -482,10 +482,10 @@ export function generateInvoicePDFDataURL(
   assignments: Assignment[],
   providers: Provider[],
   staffTimesMap: Map<string, any[]>,
-  isProforma: boolean = false,
+  isPurchaseOrder: boolean = false,
   agreementContent?: string
 ): string {
-  const doc = buildInvoicePDF(event, assignments, providers, staffTimesMap, isProforma, agreementContent);
+  const doc = buildInvoicePDF(event, assignments, providers, staffTimesMap, isPurchaseOrder, agreementContent);
   return doc.output('dataurlstring');
 }
 
@@ -494,7 +494,7 @@ function buildInvoicePDF(
   assignments: Assignment[],
   providers: Provider[],
   staffTimesMap: Map<string, any[]>,
-  isProforma: boolean = false,
+  isPurchaseOrder: boolean = false,
   agreementContent?: string
 ): any {
   const doc = new jsPDF();
@@ -517,19 +517,19 @@ function buildInvoicePDF(
   doc.text('Email: info@kssnwltd.co.uk | Tel: 07947 694 353', pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 15;
 
-  // Invoice/Proforma Title
+  // Invoice/Purchase Order Title
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text(isProforma ? 'PROFORMA INVOICE' : 'INVOICE', pageWidth / 2, yPosition, { align: 'center' });
+  doc.text(isPurchaseOrder ? 'PURCHASE ORDER INVOICE' : 'INVOICE', pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 10;
 
-  // Invoice/Proforma Number and Date
-  const documentNumber = isProforma 
-    ? `PROFORMA-${event.id.substring(0, 8).toUpperCase()}-${format(new Date(), 'yyyyMMdd')}`
+  // Invoice/Purchase Order Number and Date
+  const documentNumber = isPurchaseOrder 
+    ? `PO-${event.id.substring(0, 8).toUpperCase()}-${format(new Date(), 'yyyyMMdd')}`
     : `INV-${event.id.substring(0, 8).toUpperCase()}-${format(new Date(), 'yyyyMMdd')}`;
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${isProforma ? 'Proforma' : 'Invoice'} Number: ${documentNumber}`, pageWidth - 20, yPosition, { align: 'right' });
+  doc.text(`${isPurchaseOrder ? 'Purchase Order' : 'Invoice'} Number: ${documentNumber}`, pageWidth - 20, yPosition, { align: 'right' });
   yPosition += 6;
   doc.text(`Date: ${format(new Date(), 'dd MMMM yyyy')}`, pageWidth - 20, yPosition, { align: 'right' });
   yPosition += 10;
@@ -765,7 +765,7 @@ function buildInvoicePDF(
   doc.setFont('helvetica', 'normal');
   doc.text('Sign-in and sign-out times will be recorded on-site. The final invoice amounts will be based on', 20, yPosition, { maxWidth: pageWidth - 40 });
   yPosition += 6;
-  doc.text('actual recorded times, which will be updated within 5 days of the event end date. This proforma', 20, yPosition, { maxWidth: pageWidth - 40 });
+  doc.text('actual recorded times, which will be updated within 5 days of the event end date. This purchase order', 20, yPosition, { maxWidth: pageWidth - 40 });
   yPosition += 6;
   doc.text('is an estimate based on scheduled times and may be adjusted based on actual attendance records.', 20, yPosition, { maxWidth: pageWidth - 40 });
   yPosition += 8;

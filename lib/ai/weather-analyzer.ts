@@ -89,3 +89,4 @@ export function calculateWeatherRisk(weather: WeatherForecast): { riskMultiplier
 
   return { riskMultiplier: multiplier, reasoning };
 }
+

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -66,6 +67,7 @@ export default function ProviderEventDetailPage() {
     getDocumentsByEvent,
     getStaffDetailsByAssignment,
     addStaffDetail,
+    loadStaffDetails,
     uploadInvoice,
     getInvoicesByProvider,
     getStaffTimesByAssignment,
@@ -84,11 +86,11 @@ export default function ProviderEventDetailPage() {
     staff_name: '',
     role: '',
     sia_number: '',
-    pnc_info: '',
+    sia_expiry_date: '',
   });
   const [showPncDialog, setShowPncDialog] = useState(false);
-  const [proformaHTML, setProformaHTML] = useState<string | null>(null);
-  const proformaGeneratedRef = useRef<string | false>(false);
+  const [purchaseOrderHTML, setPurchaseOrderHTML] = useState<string | null>(null);
+  const purchaseOrderGeneratedRef = useRef<string | false>(false);
 
   useEffect(() => {
     loadEvents();
@@ -132,15 +134,16 @@ export default function ProviderEventDetailPage() {
     ? assignments.find((a) => a.event_id === id && a.provider_id === providerIdForAssignments)
     : undefined;
 
-  // Load staff times when assignment is available
+  // Load staff times and staff details when assignment is available
   useEffect(() => {
     if (assignment) {
       loadStaffTimes(assignment.id).then(() => {
         // Force a re-render by updating a state if needed
-        // The proforma effect will pick up the loaded times
+        // The purchase order effect will pick up the loaded times
       });
+      loadStaffDetails(assignment.id);
     }
-  }, [assignment?.id, loadStaffTimes]);
+  }, [assignment?.id, loadStaffTimes, loadStaffDetails]);
   
   // Debug logging for assignment status
   useEffect(() => {
@@ -172,21 +175,21 @@ export default function ProviderEventDetailPage() {
     }
   }, [assignment]);
 
-  // Load and display proforma when assignment and staff times are available
+  // Load and display purchase order when assignment and staff times are available
   useEffect(() => {
     // Skip if conditions not met
     if (!event || !assignment || !provider || assignment.status !== 'accepted' || isEventPassed) {
-      if (proformaHTML) {
-        setProformaHTML(null);
+      if (purchaseOrderHTML) {
+        setPurchaseOrderHTML(null);
       }
-      proformaGeneratedRef.current = false;
+      purchaseOrderGeneratedRef.current = false;
       return;
     }
 
     let isMounted = true;
     let cancelled = false;
     
-    const loadProforma = async () => {
+    const loadPurchaseOrder = async () => {
       if (cancelled || !isMounted) return;
 
       try {
@@ -205,13 +208,13 @@ export default function ProviderEventDetailPage() {
           const key = `${assignment.id}-${timesKey}`;
           
           // Only generate once per unique combination - if we already have the HTML for this key, skip
-          // But allow regeneration if proformaHTML is null (first load or after error)
-          if (proformaGeneratedRef.current === key && proformaHTML) {
+          // But allow regeneration if purchaseOrderHTML is null (first load or after error)
+          if (purchaseOrderGeneratedRef.current === key && purchaseOrderHTML) {
             return;
           }
           
           // Mark as generating to prevent duplicate runs
-          proformaGeneratedRef.current = key;
+          purchaseOrderGeneratedRef.current = key;
           
           const staffTimesMap = new Map<string, any[]>();
           staffTimesMap.set(assignment.id, times);
@@ -240,7 +243,7 @@ export default function ProviderEventDetailPage() {
 
           if (cancelled || !isMounted) return;
 
-          // Generate proforma HTML for display
+          // Generate purchase order HTML for display
           const html = generateInvoiceHTML(
             event,
             [assignment],
@@ -251,25 +254,25 @@ export default function ProviderEventDetailPage() {
           );
           
           if (isMounted && !cancelled) {
-            setProformaHTML(html);
+            setPurchaseOrderHTML(html);
           }
         } else {
-          // If no staff times, don't show proforma
+          // If no staff times, don't show purchase order
           if (isMounted && !cancelled) {
-            setProformaHTML(null);
-            proformaGeneratedRef.current = '';
+            setPurchaseOrderHTML(null);
+            purchaseOrderGeneratedRef.current = '';
           }
         }
       } catch (error) {
-        console.error('Error loading proforma:', error);
+        console.error('Error loading purchase order:', error);
         if (isMounted && !cancelled) {
-          setProformaHTML(null);
-          proformaGeneratedRef.current = '';
+          setPurchaseOrderHTML(null);
+          purchaseOrderGeneratedRef.current = '';
         }
       }
     };
 
-    loadProforma();
+    loadPurchaseOrder();
     
     return () => {
       cancelled = true;
@@ -362,29 +365,42 @@ export default function ProviderEventDetailPage() {
     }
   };
 
-  const handleAddStaffDetail = () => {
+  const handleAddStaffDetail = async () => {
     if (!assignment || !staffDetailForm.staff_name) return;
 
-    addStaffDetail({
-      assignment_id: assignment.id,
-      staff_name: staffDetailForm.staff_name,
-      role: (staffDetailForm.role as 'Manager' | 'Supervisor' | 'SIA' | 'Steward') || undefined,
-      sia_number: staffDetailForm.sia_number || undefined,
-      pnc_info: staffDetailForm.pnc_info || undefined,
-    });
+    try {
+      await addStaffDetail({
+        assignment_id: assignment.id,
+        staff_name: staffDetailForm.staff_name,
+        role: (staffDetailForm.role as 'Manager' | 'Supervisor' | 'SIA' | 'Steward') || undefined,
+        sia_number: staffDetailForm.sia_number || undefined,
+        sia_expiry_date: staffDetailForm.sia_expiry_date || undefined,
+      });
 
-    setStaffDetailForm({
-      staff_name: '',
-      role: '',
-      sia_number: '',
-      pnc_info: '',
-    });
+      // Reload staff details to show the new entry
+      await loadStaffDetails(assignment.id);
 
-    toast({
-      title: 'Staff Member Added',
-      description: `${staffDetailForm.staff_name} has been added to the staff list.`,
-      variant: 'success',
-    });
+      const staffName = staffDetailForm.staff_name;
+      setStaffDetailForm({
+        staff_name: '',
+        role: '',
+        sia_number: '',
+        sia_expiry_date: '',
+      });
+
+      toast({
+        title: 'Staff Member Added',
+        description: `${staffName} has been added to the staff list.`,
+        variant: 'success',
+      });
+    } catch (error: any) {
+      console.error('Error adding staff detail:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to add staff member. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleInvoiceUpload = (file: File) => {
@@ -439,9 +455,9 @@ export default function ProviderEventDetailPage() {
         });
       }
 
-      // Generate the proforma invoice PDF with only this provider's assignment
-      const isProforma = !isEventPassed;
-      generateInvoicePDF(event, [assignment], [provider], staffTimesMap, isProforma, agreementContent);
+      // Generate the purchase order invoice PDF with only this provider's assignment
+      const isPurchaseOrder = !isEventPassed;
+      generateInvoicePDF(event, [assignment], [provider], staffTimesMap, isPurchaseOrder, agreementContent);
 
       toast({
         title: 'Invoice Generated',
@@ -535,7 +551,7 @@ export default function ProviderEventDetailPage() {
           {isEventPassed ? (
             <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
           ) : (
-            <TabsTrigger value="proforma">Proforma</TabsTrigger>
+            <TabsTrigger value="purchase_order">Purchase Order</TabsTrigger>
           )}
         </TabsList>
 
@@ -729,13 +745,14 @@ export default function ProviderEventDetailPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PNC Info</Label>
+                        <Label>SIA Expiry Date</Label>
                         <Input
-                          value={staffDetailForm.pnc_info}
+                          type="text"
+                          value={staffDetailForm.sia_expiry_date}
                           onChange={(e) =>
-                            setStaffDetailForm({ ...staffDetailForm, pnc_info: e.target.value })
+                            setStaffDetailForm({ ...staffDetailForm, sia_expiry_date: e.target.value })
                           }
-                          placeholder="PNC reference"
+                          placeholder="DD/MM/YYYY (e.g., 26/02/2026)"
                         />
                       </div>
                     </div>
@@ -749,33 +766,60 @@ export default function ProviderEventDetailPage() {
                     onUpload={handleBulkStaffUpload}
                   />
 
-                  {staffDetails.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">Submitted Staff List</h4>
-                      <div className="border rounded-lg">
-                        <table className="w-full">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-2 text-left text-sm font-medium">Name</th>
-                              <th className="px-4 py-2 text-left text-sm font-medium">Role</th>
-                              <th className="px-4 py-2 text-left text-sm font-medium">SIA Number</th>
-                              <th className="px-4 py-2 text-left text-sm font-medium">PNC Info</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {staffDetails.map((detail) => (
-                              <tr key={detail.id} className="border-t">
-                                <td className="px-4 py-2">{detail.staff_name}</td>
-                                <td className="px-4 py-2">{detail.role || '-'}</td>
-                                <td className="px-4 py-2">{detail.sia_number || '-'}</td>
-                                <td className="px-4 py-2">{detail.pnc_info || '-'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Submitted Staff List</h4>
+                    {staffDetails.length > 0 ? (
+                      <Card>
+                        <CardContent className="p-0">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>SIA Number</TableHead>
+                                <TableHead>Expiry Date</TableHead>
+                                <TableHead>Added</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {staffDetails.map((detail) => (
+                                <TableRow key={detail.id}>
+                                  <TableCell className="font-medium">{detail.staff_name}</TableCell>
+                                  <TableCell>
+                                    {detail.role ? (
+                                      <Badge variant="outline" className="font-normal">
+                                        {detail.role}
+                                      </Badge>
+                                    ) : (
+                                      '-'
+                                    )}
+                                  </TableCell>
+                                  <TableCell>{detail.sia_number || '-'}</TableCell>
+                                  <TableCell>
+                                    {detail.sia_expiry_date 
+                                      ? format(new Date(detail.sia_expiry_date), 'dd/MM/yyyy')
+                                      : '-'}
+                                  </TableCell>
+                                  <TableCell className="text-sm text-muted-foreground">
+                                    {detail.created_at ? format(new Date(detail.created_at), 'MMM dd, yyyy') : '-'}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Card>
+                        <CardContent className="py-8">
+                          <div className="text-center text-muted-foreground">
+                            <p>No staff members added yet.</p>
+                            <p className="text-sm mt-1">Add staff members using the form above.</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 </div>
               )}
               {!assignment.details_requested && (
@@ -822,19 +866,19 @@ export default function ProviderEventDetailPage() {
           </Card>
         </TabsContent>
 
-        {/* Proforma Tab - Before Event */}
+        {/* Purchase Order Tab - Before Event */}
         {!isEventPassed && (
-          <TabsContent value="proforma" className="space-y-4">
+          <TabsContent value="purchase_order" className="space-y-4">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Proforma Invoice</CardTitle>
+                    <CardTitle>Purchase Order Invoice</CardTitle>
                     <CardDescription>
-                      Proforma invoice for this event based on your assignment and staff times
+                      Purchase order invoice for this event based on your assignment and staff times
                     </CardDescription>
                   </div>
-                  {proformaHTML && (
+                  {purchaseOrderHTML && (
                     <Button onClick={handleGenerateInvoice} variant="outline">
                       <Download className="h-4 w-4 mr-2" />
                       Download PDF
@@ -845,20 +889,20 @@ export default function ProviderEventDetailPage() {
               <CardContent className="space-y-4">
                 {assignment && assignment.status === 'accepted' ? (
                   <div className="space-y-4">
-                    {proformaHTML ? (
+                    {purchaseOrderHTML ? (
                       <div className="border rounded-xl shadow-inner bg-gray-50 p-6 overflow-auto max-h-[800px]">
-                        <div className="bg-white shadow-sm p-8 min-h-[800px] mx-auto max-w-[800px]" dangerouslySetInnerHTML={{ __html: extractBodyContent(proformaHTML) }} />
+                        <div className="bg-white shadow-sm p-8 min-h-[800px] mx-auto max-w-[800px]" dangerouslySetInnerHTML={{ __html: extractBodyContent(purchaseOrderHTML) }} />
                       </div>
                     ) : staffTimes.length > 0 ? (
                       <div className="border rounded-lg p-4 bg-yellow-50">
                         <p className="text-sm text-yellow-800">
-                          Loading proforma invoice...
+                          Loading purchase order invoice...
                         </p>
                       </div>
                     ) : (
                       <div className="border rounded-lg p-4 bg-yellow-50">
                         <p className="text-sm text-yellow-800">
-                          Staff times have not been set yet. The proforma will be available once staff times are assigned.
+                          Staff times have not been set yet. The purchase order will be available once staff times are assigned.
                         </p>
                       </div>
                     )}
@@ -930,7 +974,7 @@ export default function ProviderEventDetailPage() {
                 ) : (
                   <div className="border rounded-lg p-4 bg-gray-50">
                     <p className="text-sm text-gray-600">
-                      Proforma invoice will be available once your assignment is accepted.
+                      Purchase order invoice will be available once your assignment is accepted.
                     </p>
                   </div>
                 )}
@@ -978,7 +1022,7 @@ export default function ProviderEventDetailPage() {
                     <div className="border rounded-lg p-4 bg-blue-50">
                       <h3 className="font-semibold mb-2">Upload Your Invoice</h3>
                       <p className="text-sm text-gray-600 mb-4">
-                        Please upload your invoice for this completed event. The invoice should reflect the actual hours worked and any adjustments from the proforma.
+                        Please upload your invoice for this completed event. The invoice should reflect the actual hours worked and any adjustments from the purchase order.
                       </p>
                     </div>
                     <FileUpload

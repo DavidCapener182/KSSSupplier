@@ -542,10 +542,29 @@ export async function getStaffDetailsByAssignment(assignmentId: string): Promise
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data;
+  // Map database results to StaffDetail type
+  return data.map((row: any) => ({
+    id: row.id,
+    assignment_id: row.assignment_id,
+    staff_name: row.staff_name,
+    role: row.role,
+    sia_number: row.sia_number,
+    sia_expiry_date: row.sia_expiry_date,
+    pnc_info: row.pnc_info,
+    created_at: row.created_at,
+  }));
 }
 
 export async function addStaffDetail(staff: Omit<StaffDetail, 'id' | 'created_at'>): Promise<StaffDetail> {
+  // Convert expiry date from DD/MM/YYYY to YYYY-MM-DD if needed
+  let expiryDate = staff.sia_expiry_date;
+  if (expiryDate && expiryDate.includes('/')) {
+    const parts = expiryDate.split('/');
+    if (parts.length === 3) {
+      expiryDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+  }
+
   const { data, error } = await supabase
     .from('staff_details')
     .insert({
@@ -553,29 +572,61 @@ export async function addStaffDetail(staff: Omit<StaffDetail, 'id' | 'created_at
       staff_name: staff.staff_name,
       role: staff.role,
       sia_number: staff.sia_number,
+      sia_expiry_date: expiryDate || null,
       pnc_info: staff.pnc_info,
     })
     .select()
     .single();
 
   if (error) throw error;
-  return data;
+  // Map database result to StaffDetail type
+  return {
+    id: data.id,
+    assignment_id: data.assignment_id,
+    staff_name: data.staff_name,
+    role: data.role,
+    sia_number: data.sia_number,
+    sia_expiry_date: data.sia_expiry_date,
+    pnc_info: data.pnc_info,
+    created_at: data.created_at,
+  };
 }
 
 export async function addStaffDetails(staffList: Omit<StaffDetail, 'id' | 'created_at'>[]): Promise<StaffDetail[]> {
   const { data, error } = await supabase
     .from('staff_details')
-    .insert(staffList.map(s => ({
-      assignment_id: s.assignment_id,
-      staff_name: s.staff_name,
-      role: s.role,
-      sia_number: s.sia_number,
-      pnc_info: s.pnc_info,
-    })))
+    .insert(staffList.map(s => {
+      // Convert expiry date from DD/MM/YYYY to YYYY-MM-DD if needed
+      let expiryDate = s.sia_expiry_date;
+      if (expiryDate && expiryDate.includes('/')) {
+        const parts = expiryDate.split('/');
+        if (parts.length === 3) {
+          expiryDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+      }
+      return {
+        assignment_id: s.assignment_id,
+        staff_name: s.staff_name,
+        role: s.role,
+        sia_number: s.sia_number,
+        sia_expiry_date: expiryDate || null,
+        pnc_info: s.pnc_info,
+      };
+    }))
     .select();
 
   if (error) throw error;
-  return data;
+  // Map database results to StaffDetail type
+  return data.map((row: any) => ({
+    id: row.id,
+    assignment_id: row.assignment_id,
+    staff_name: row.staff_name,
+    role: row.role,
+    sia_number: row.sia_number,
+    sia_expiry_date: row.sia_expiry_date,
+    pnc_info: row.pnc_info,
+    created_at: row.created_at,
+  }));
 }
 
 // Staff Times
@@ -902,7 +953,7 @@ export async function getInvoices(): Promise<Invoice[]> {
     id: row.id,
     event_id: row.event_id,
     provider_id: row.provider_id,
-    file_path: row.file_path || null, // Handle null for proformas
+    file_path: row.file_path || null, // Handle null for purchase orders
     amount: row.amount ? parseFloat(row.amount) : null,
     status: row.status,
     created_at: row.created_at,
@@ -922,7 +973,7 @@ export async function getInvoicesByProvider(providerId: string): Promise<Invoice
     id: row.id,
     event_id: row.event_id,
     provider_id: row.provider_id,
-    file_path: row.file_path || null, // Handle null for proformas
+    file_path: row.file_path || null, // Handle null for purchase orders
     amount: row.amount ? parseFloat(row.amount) : null,
     status: row.status,
     created_at: row.created_at,
@@ -936,7 +987,7 @@ export async function uploadInvoice(
 ): Promise<Invoice> {
   // If adminEmail is provided, use simple RPC function to bypass RLS (for mock auth)
   if (adminEmail) {
-    const { data: invoiceId, error } = await supabase.rpc('create_proforma_invoice', {
+    const { data: invoiceId, error } = await supabase.rpc('create_purchase_order_invoice', {
       event_id_param: invoice.event_id,
       provider_id_param: invoice.provider_id,
       amount_param: invoice.amount || 0,
@@ -949,7 +1000,7 @@ export async function uploadInvoice(
     }
 
     if (!invoiceId) {
-      throw new Error('No invoice ID returned from create_proforma_invoice');
+      throw new Error('No invoice ID returned from create_purchase_order_invoice');
     }
 
     // Return the invoice with the ID we got - we'll let the store reload to get full data
@@ -960,7 +1011,7 @@ export async function uploadInvoice(
       provider_id: invoice.provider_id,
       file_path: null,
       amount: invoice.amount,
-      status: 'proforma' as const,
+      status: 'purchase_order' as const,
       created_at: new Date().toISOString(),
       payment_date: undefined,
     };
@@ -972,7 +1023,7 @@ export async function uploadInvoice(
     .insert({
       event_id: invoice.event_id,
       provider_id: invoice.provider_id,
-      file_path: invoice.file_path || null, // Allow null for proformas
+      file_path: invoice.file_path || null, // Allow null for purchase orders
       amount: invoice.amount,
       status: invoice.status || 'pending',
     })
@@ -990,7 +1041,7 @@ export async function uploadInvoice(
     id: data.id,
     event_id: data.event_id,
     provider_id: data.provider_id,
-    file_path: data.file_path || null, // Handle null for proformas
+    file_path: data.file_path || null, // Handle null for purchase orders
     amount: data.amount ? parseFloat(data.amount) : null,
     status: data.status,
     created_at: data.created_at,
@@ -998,7 +1049,7 @@ export async function uploadInvoice(
   };
 }
 
-export async function updateInvoiceStatus(id: string, status: 'pending' | 'approved' | 'paid' | 'proforma' | 'outstanding', paymentDate?: string): Promise<Invoice> {
+export async function updateInvoiceStatus(id: string, status: 'pending' | 'approved' | 'paid' | 'purchase_order' | 'outstanding', paymentDate?: string): Promise<Invoice> {
   const updateData: any = { status };
   if (paymentDate) updateData.payment_date = paymentDate;
 
@@ -1014,7 +1065,7 @@ export async function updateInvoiceStatus(id: string, status: 'pending' | 'appro
     id: data.id,
     event_id: data.event_id,
     provider_id: data.provider_id,
-    file_path: data.file_path || null, // Handle null for proformas
+    file_path: data.file_path || null, // Handle null for purchase orders
     amount: data.amount ? parseFloat(data.amount) : null,
     status: data.status,
     created_at: data.created_at,

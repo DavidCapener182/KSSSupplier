@@ -55,3 +55,4 @@ CREATE POLICY "Providers can view own travel risks"
       AND p.user_id = auth.uid()
     )
   );
+

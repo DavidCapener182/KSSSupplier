@@ -24,3 +24,4 @@ export function RelationshipHealthAlert({ score, riskFactor, recentTopics }: Rel
     </Alert>
   );
 }
+

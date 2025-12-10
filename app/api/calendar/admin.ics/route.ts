@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     // Create calendar
     const calendar = ical({
-      prodId: '//KSS NW UK Event Staffing Platform//EN',
+      prodId: '//KSS NW UK Labour Provider Portal//EN',
       name: 'KSS NW UK Events - All Events',
       timezone: 'Europe/London',
     });

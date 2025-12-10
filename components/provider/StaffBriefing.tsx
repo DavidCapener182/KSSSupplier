@@ -172,3 +172,4 @@ export function StaffBriefing({ eventId, eventName, eventDate, eventLocation }: 
     </Card>
   );
 }
+

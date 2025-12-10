@@ -43,7 +43,7 @@ export default function HelpPage() {
       />
       <div>
         <h1 className="text-3xl font-bold">Help & Documentation</h1>
-        <p className="text-gray-600 mt-1">Admin Guide for the KSS Event Staffing Platform</p>
+        <p className="text-gray-600 mt-1">Admin Guide for the KSS NW UK Labour Provider Portal</p>
       </div>
 
       {/* Quick Start Guide */}
@@ -191,9 +191,9 @@ export default function HelpPage() {
                       <li>Review uploaded invoices from providers.</li>
                       <li>Update status to "Approved" or "Paid" as you process them.</li>
                     </ol>
-                    <p className="mt-2"><strong>Proformas:</strong></p>
+                    <p className="mt-2"><strong>Purchase Orders:</strong></p>
                     <p className="ml-2">
-                      You can issue proforma invoices or payment requests directly through the system for specific events.
+                      You can issue purchase order invoices or payment requests directly through the system for specific events.
                     </p>
                   </div>
                 </AccordionContent>
@@ -833,7 +833,7 @@ export default function HelpPage() {
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold tracking-tight">Finance Overview</h2>
               <p className="text-muted-foreground">
-                Manage incoming invoices, issue proformas, and track payment status.
+                Manage incoming invoices, issue purchase orders, and track payment status.
               </p>
               
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -842,10 +842,10 @@ export default function HelpPage() {
                   Invoice Status Management
                 </h3>
                 <p className="text-xs text-muted-foreground mb-2">
-                  <strong>Proforma Invoices:</strong> Can be marked as "Paid" using the "Mark Paid" button.
+                  <strong>Purchase Order Invoices:</strong> Can be marked as "Paid" using the "Mark Paid" button.
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  <strong>Auto-Status Update:</strong> Proforma invoices automatically change to "Outstanding" if not marked as paid within 30 days after the event's end date.
+                  <strong>Auto-Status Update:</strong> Purchase order invoices automatically change to "Outstanding" if not marked as paid within 30 days after the event's end date.
                 </p>
               </div>
               
@@ -857,21 +857,21 @@ export default function HelpPage() {
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="invoice-2">
-                  <AccordionTrigger>Issuing Proformas</AccordionTrigger>
+                  <AccordionTrigger>Issuing Purchase Orders</AccordionTrigger>
                   <AccordionContent className="text-muted-foreground text-sm">
-                    You can create a proforma invoice request for a provider. This sends them a notification to generate a bill for a specific amount.
+                    You can create a purchase order invoice request for a provider. This sends them a notification to generate a bill for a specific amount.
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="invoice-4">
-                  <AccordionTrigger>Marking Proformas as Paid</AccordionTrigger>
+                  <AccordionTrigger>Marking Purchase Orders as Paid</AccordionTrigger>
                   <AccordionContent className="text-muted-foreground text-sm">
-                    For proforma invoices, you can mark them as "Paid" using the "Mark Paid" button. This updates the invoice status and helps track payment completion.
+                    For purchase order invoices, you can mark them as "Paid" using the "Mark Paid" button. This updates the invoice status and helps track payment completion.
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="invoice-5">
                   <AccordionTrigger>Outstanding Invoice Status</AccordionTrigger>
                   <AccordionContent className="text-muted-foreground text-sm">
-                    Proforma invoices automatically change to "Outstanding" status if they haven't been marked as paid within 30 days after the event's end date. This helps identify invoices that need attention.
+                    Purchase order invoices automatically change to "Outstanding" status if they haven't been marked as paid within 30 days after the event's end date. This helps identify invoices that need attention.
                   </AccordionContent>
                 </AccordionItem>
                  <AccordionItem value="invoice-3">
@@ -1192,7 +1192,10 @@ export default function HelpPage() {
             <div className="mt-4">
               <h3 className="font-semibold mb-2 text-sm">Platform Information</h3>
               <p className="text-sm text-muted-foreground">
-                Version: 1.0.0 (Phase 1 - Mock Data)
+                Version: 2.0.0 (Production)
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Environment: Production | Data Storage: PostgreSQL (Supabase)
               </p>
               <p className="text-sm text-muted-foreground">
                 For technical issues or feature requests, please contact the development team.

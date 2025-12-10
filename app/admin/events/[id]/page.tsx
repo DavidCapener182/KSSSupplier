@@ -10,6 +10,7 @@ import { StaffingRiskAlerts } from '@/components/admin/StaffingRiskAlerts';
 import { DoubleBookingAlerts } from '@/components/admin/DoubleBookingAlerts';
 import { EventSuccessReport } from '@/components/admin/EventSuccessReport';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,7 +45,7 @@ import {
 import { format, differenceInDays, isSameDay, parseISO, addDays } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Plus, Upload, FileText, Edit, Trash2, Calendar, HelpCircle, Download, Printer, FileBarChart, Play, Square, QrCode } from 'lucide-react';
+import { ArrowLeft, Plus, Upload, FileText, Edit, Trash2, Calendar, HelpCircle, Download, Printer, FileBarChart, Play, Square, QrCode, AlertCircle } from 'lucide-react';
 import { generateEventSummaryPDF, generateInvoicePDF, generatePncSiaPDF } from '@/lib/pdf-export';
 import { startEvent, stopEvent } from '@/app/actions/checkpoint-actions';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
@@ -746,13 +747,13 @@ export default function EventDetailPage() {
       // Update assignment to mark times as sent
       await updateAssignment(selectedAssignment.id, { times_sent: true });
 
-      // Create or update proforma invoice record immediately when times are sent
+      // Create or update purchase order invoice record immediately when times are sent
       try {
         // Load staff times to calculate amount (they were just saved above)
         const times = getStaffTimesByAssignment(selectedAssignment.id);
         
         // Calculate invoice amount (we'll use default rates since we don't have provider agreement here)
-        // For admin-created proformas, we use default rates
+        // For admin-created purchase orders, we use default rates
         let invoiceAmount = 0;
         if (times && times.length > 0) {
           // Calculate from actual times
@@ -784,57 +785,57 @@ export default function EventDetailPage() {
         // Add VAT (20%)
         invoiceAmount = invoiceAmount * 1.2;
 
-        // Reload invoices first to check if proforma already exists
+        // Reload invoices first to check if purchase order already exists
         await loadInvoices();
-        const existingProforma = invoices.find(
+        const existingPurchaseOrder = invoices.find(
           (inv) => 
             inv.event_id === selectedAssignment.event_id &&
             inv.provider_id === selectedAssignment.provider_id &&
-            inv.status === 'proforma'
+            inv.status === 'purchase_order'
         );
 
-        if (existingProforma) {
-          // Update existing proforma - we could update the amount here if needed
-          await updateInvoiceStatus(existingProforma.id, 'proforma');
-          await loadInvoices(); // Reload to show updated proforma
+        if (existingPurchaseOrder) {
+          // Update existing purchase order - we could update the amount here if needed
+          await updateInvoiceStatus(existingPurchaseOrder.id, 'purchase_order');
+          await loadInvoices(); // Reload to show updated purchase order
           toast({
-            title: 'Proforma Updated',
-            description: 'Proforma invoice has been updated and is now visible in the Invoices page.',
+            title: 'Purchase Order Updated',
+            description: 'Purchase order invoice has been updated and is now visible in the Invoices page.',
             variant: 'success',
           });
         } else {
-          // Create new proforma invoice (file_path can be null for proformas since they're generated on-demand)
+          // Create new purchase order invoice (file_path can be null for purchase orders since they're generated on-demand)
           // If using mock auth, pass admin email to use RPC function that bypasses RLS
           const isMockAuth = user?.id?.startsWith('user-') || user?.id?.startsWith('admin-');
           const adminEmail = isMockAuth ? user?.email : undefined;
           
           try {
-            const newProforma = await uploadInvoice({
+            const newPurchaseOrder = await uploadInvoice({
               event_id: selectedAssignment.event_id,
               provider_id: selectedAssignment.provider_id,
-              file_path: null, // Proformas don't have uploaded files
+              file_path: null, // Purchase orders don't have uploaded files
               amount: invoiceAmount,
-              status: 'proforma',
+              status: 'purchase_order',
             }, adminEmail);
-            console.log('Proforma created successfully:', newProforma.id);
+            console.log('Purchase order created successfully:', newPurchaseOrder.id);
             
-            // Reload invoices to show the new proforma (uploadInvoice already adds to store, but reload ensures consistency)
+            // Reload invoices to show the new purchase order (uploadInvoice already adds to store, but reload ensures consistency)
             await loadInvoices();
             
             toast({
-              title: 'Proforma Created',
-              description: 'Proforma invoice has been created and is now visible in the Invoices page.',
+              title: 'Purchase Order Created',
+              description: 'Purchase order invoice has been created and is now visible in the Invoices page.',
               variant: 'success',
             });
           } catch (createError: any) {
             // If creation fails, log detailed error and rethrow so outer catch handles it
-            console.error('Failed to create proforma invoice:', createError);
+            console.error('Failed to create purchase order invoice:', createError);
             throw createError;
           }
         }
       } catch (invoiceError: any) {
         // Log but don't fail - the times were saved successfully
-        console.error('Failed to create/update proforma invoice, but times were saved:', invoiceError);
+        console.error('Failed to create/update purchase order invoice, but times were saved:', invoiceError);
         console.error('Error details:', {
           message: invoiceError?.message,
           code: invoiceError?.code,
@@ -843,7 +844,7 @@ export default function EventDetailPage() {
         });
         toast({
           title: 'Warning',
-          description: `Times were saved, but proforma invoice could not be created/updated: ${invoiceError?.message || invoiceError?.code || 'Unknown error'}. Check console for details.`,
+          description: `Times were saved, but purchase order invoice could not be created/updated: ${invoiceError?.message || invoiceError?.code || 'Unknown error'}. Check console for details.`,
           variant: 'default',
         });
       }
@@ -903,7 +904,7 @@ export default function EventDetailPage() {
         }
       }
 
-      // Generate the invoice PDF (admin generates actual invoices, not proforma)
+      // Generate the invoice PDF (admin generates actual invoices, not purchase orders)
       // Note: Admin invoices use default rates since we don't have provider-specific agreements here
       generateInvoicePDF(event, acceptedAssignments, providersForDisplay, staffTimesMap, false);
 
@@ -1440,9 +1441,11 @@ export default function EventDetailPage() {
         </TabsList>
 
         <TabsContent value="assignments" className="space-y-4 md:space-y-6">
-          <StaffingRiskAlerts eventId={id} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <StaffingRiskAlerts eventId={id} />
+            <AIProviderRecommendations eventId={id} onAssign={handleAIAssign} />
+          </div>
           <DoubleBookingAlerts eventId={id} />
-          <AIProviderRecommendations eventId={id} onAssign={handleAIAssign} />
           
           <Card>
             <CardHeader>
@@ -1664,38 +1667,73 @@ export default function EventDetailPage() {
                   : 1;
 
                 // Render requirements cards
-                const renderRequirementsCards = (requirements: typeof event.requirements, assigned: typeof totalAssigned) => (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    {requirements.managers > 0 && (
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold">{assigned.managers}/{requirements.managers}</div>
-                        <div className="text-sm text-gray-600">Managers</div>
+                const renderRequirementsCards = (requirements: typeof event.requirements, assigned: typeof totalAssigned) => {
+                  // Calculate missing staff for each role
+                  const missing = {
+                    managers: Math.max(0, requirements.managers - assigned.managers),
+                    supervisors: Math.max(0, requirements.supervisors - assigned.supervisors),
+                    sia: Math.max(0, requirements.sia - assigned.sia),
+                    stewards: Math.max(0, requirements.stewards - assigned.stewards),
+                  };
+
+                  // Check if any roles are under-assigned
+                  const hasMissingStaff = missing.managers > 0 || missing.supervisors > 0 || missing.sia > 0 || missing.stewards > 0;
+
+                  // Build warning message
+                  const missingRoles: string[] = [];
+                  if (missing.managers > 0) missingRoles.push(`${missing.managers} Manager${missing.managers > 1 ? 's' : ''}`);
+                  if (missing.supervisors > 0) missingRoles.push(`${missing.supervisors} Supervisor${missing.supervisors > 1 ? 's' : ''}`);
+                  if (missing.sia > 0) missingRoles.push(`${missing.sia} SIA Licensed`);
+                  if (missing.stewards > 0) missingRoles.push(`${missing.stewards} Steward${missing.stewards > 1 ? 's' : ''}`);
+
+                  return (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        {requirements.managers > 0 && (
+                          <div className={`text-center p-4 border rounded-lg ${assigned.managers < requirements.managers ? 'border-amber-300 bg-amber-50/50' : ''}`}>
+                            <div className={`text-2xl font-bold ${assigned.managers < requirements.managers ? 'text-amber-700' : ''}`}>
+                              {assigned.managers}/{requirements.managers}
+                            </div>
+                            <div className="text-sm text-gray-600">Managers</div>
+                          </div>
+                        )}
+                        {requirements.supervisors > 0 && (
+                          <div className={`text-center p-4 border rounded-lg ${assigned.supervisors < requirements.supervisors ? 'border-amber-300 bg-amber-50/50' : ''}`}>
+                            <div className={`text-2xl font-bold ${assigned.supervisors < requirements.supervisors ? 'text-amber-700' : ''}`}>
+                              {assigned.supervisors}/{requirements.supervisors}
+                            </div>
+                            <div className="text-sm text-gray-600">Supervisors</div>
+                          </div>
+                        )}
+                        {requirements.sia > 0 && (
+                          <div className={`text-center p-4 border rounded-lg ${assigned.sia < requirements.sia ? 'border-amber-300 bg-amber-50/50' : ''}`}>
+                            <div className={`text-2xl font-bold ${assigned.sia < requirements.sia ? 'text-amber-700' : ''}`}>
+                              {assigned.sia}/{requirements.sia}
+                            </div>
+                            <div className="text-sm text-gray-600">SIA Licensed</div>
+                          </div>
+                        )}
+                        {requirements.stewards > 0 && (
+                          <div className={`text-center p-4 border rounded-lg ${assigned.stewards < requirements.stewards ? 'border-amber-300 bg-amber-50/50' : ''}`}>
+                            <div className={`text-2xl font-bold ${assigned.stewards < requirements.stewards ? 'text-amber-700' : ''}`}>
+                              {assigned.stewards}/{requirements.stewards}
+                            </div>
+                            <div className="text-sm text-gray-600">Stewards</div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {requirements.supervisors > 0 && (
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold">
-                          {assigned.supervisors}/{requirements.supervisors}
-                        </div>
-                        <div className="text-sm text-gray-600">Supervisors</div>
-                      </div>
-                    )}
-                    {requirements.sia > 0 && (
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold">{assigned.sia}/{requirements.sia}</div>
-                        <div className="text-sm text-gray-600">SIA Licensed</div>
-                      </div>
-                    )}
-                    {requirements.stewards > 0 && (
-                      <div className="text-center p-4 border rounded-lg">
-                        <div className="text-2xl font-bold">
-                          {assigned.stewards}/{requirements.stewards}
-                        </div>
-                        <div className="text-sm text-gray-600">Stewards</div>
-                      </div>
-                    )}
-                  </div>
-                );
+                      {hasMissingStaff && (
+                        <Alert className="mb-6 border-amber-300 bg-amber-50 dark:bg-amber-950/20">
+                          <AlertCircle className="h-4 w-4 text-amber-600" />
+                          <AlertTitle className="text-amber-800 dark:text-amber-200">Staffing Shortage</AlertTitle>
+                          <AlertDescription className="text-amber-700 dark:text-amber-300">
+                            We still require {missingRoles.join(', ')} for this event. Please assign additional providers to meet the requirements.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </>
+                  );
+                };
 
                 if (isMultiDay) {
                   return (
@@ -1819,7 +1857,7 @@ export default function EventDetailPage() {
                                 <th className="px-4 py-2 text-left font-medium text-gray-500">Name</th>
                                 <th className="px-4 py-2 text-left font-medium text-gray-500">Role</th>
                                 <th className="px-4 py-2 text-left font-medium text-gray-500">SIA Number</th>
-                                <th className="px-4 py-2 text-left font-medium text-gray-500">PNC Info</th>
+                                <th className="px-4 py-2 text-left font-medium text-gray-500">Expiry Date</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y">
@@ -1836,7 +1874,11 @@ export default function EventDetailPage() {
                                     )}
                                   </td>
                                   <td className="px-4 py-2 font-mono text-xs">{staff.sia_number || '-'}</td>
-                                  <td className="px-4 py-2 text-gray-500">{staff.pnc_info || '-'}</td>
+                                  <td className="px-4 py-2">
+                                    {staff.sia_expiry_date 
+                                      ? format(new Date(staff.sia_expiry_date), 'dd/MM/yyyy')
+                                      : '-'}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>

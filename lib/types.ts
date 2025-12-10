@@ -71,7 +71,9 @@ export interface StaffDetail {
   staff_name: string;
   role?: 'Manager' | 'Supervisor' | 'SIA' | 'Steward';
   sia_number?: string;
+  sia_expiry_date?: string; // Date in YYYY-MM-DD format
   pnc_info?: string;
+  created_at?: string;
 }
 
 export interface StaffTimes {
@@ -123,9 +125,9 @@ export interface Invoice {
   id: string;
   event_id: string;
   provider_id: string;
-  file_path: string | null; // Can be null for proformas
+  file_path: string | null; // Can be null for purchase orders
   amount: number | null;
-  status: 'pending' | 'approved' | 'paid' | 'proforma' | 'outstanding';
+  status: 'pending' | 'approved' | 'paid' | 'purchase_order' | 'outstanding';
   created_at: string;
   payment_date?: string;
 }

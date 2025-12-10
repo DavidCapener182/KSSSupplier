@@ -121,14 +121,9 @@ export function AIProviderRecommendations({ eventId, onAssign }: AIProviderRecom
   return (
     <Card className="border-indigo-200 shadow-sm overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-indigo-600" />
-            <CardTitle className="text-lg text-indigo-900">Top Recommendations</CardTitle>
-          </div>
-          <Badge variant="outline" className="bg-white text-indigo-700 border-indigo-200">
-            AI Powered
-          </Badge>
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-indigo-600" />
+          <CardTitle className="text-lg text-indigo-900">Top Recommendations</CardTitle>
         </div>
         {aiReasoning && (
           <p className="text-sm text-indigo-800 mt-2 italic">

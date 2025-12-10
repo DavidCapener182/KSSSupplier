@@ -1,6 +1,6 @@
 # Supabase Database Setup
 
-This directory contains SQL migration files for setting up the KSS NW UK Event Staffing Platform database.
+This directory contains SQL migration files for setting up the KSS NW UK Labour Provider Portal database.
 
 ## Setup Instructions
 

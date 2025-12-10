@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertCircle, CheckCircle, ShieldAlert, ShieldCheck, RefreshCw } from 'lucide-react';
 import { StaffDetail } from '@/lib/types';
 import { validateSIALicense } from '@/lib/ai/sia-validator';
+import { format } from 'date-fns';
 
 interface SIALicenseVerificationProps {
   staffDetails: StaffDetail[];
@@ -15,19 +16,24 @@ interface SIALicenseVerificationProps {
 }
 
 export function SIALicenseVerification({ staffDetails, onRefresh }: SIALicenseVerificationProps) {
-  const [filter, setFilter] = useState<'all' | 'issues'>('issues');
+  const [filter, setFilter] = useState<'all' | 'issues'>('all');
 
   const processedStaff = staffDetails.map(staff => {
-    // Extract expiry date from pnc_info if possible, or use a specific field if we had one
-    // Current schema stores pnc_info as text. We'll try to find a date pattern.
-    const dateMatch = staff.pnc_info?.match(/(\d{4}-\d{2}-\d{2})/) || staff.pnc_info?.match(/(\d{2}\/\d{2}\/\d{4})/);
-    let expiryDateStr = dateMatch ? dateMatch[0] : undefined;
+    // Use sia_expiry_date from database, or try to extract from pnc_info as fallback
+    let expiryDateStr = staff.sia_expiry_date;
     
-    // Normalize date format if needed (simple check)
+    // If no expiry date in database, try to extract from pnc_info
+    if (!expiryDateStr && staff.pnc_info) {
+      const dateMatch = staff.pnc_info.match(/(\d{4}-\d{2}-\d{2})/) || staff.pnc_info.match(/(\d{2}\/\d{2}\/\d{4})/);
+      expiryDateStr = dateMatch ? dateMatch[0] : undefined;
+    }
+    
+    // Normalize date format if needed (DD/MM/YYYY to YYYY-MM-DD)
     if (expiryDateStr && expiryDateStr.includes('/')) {
         const parts = expiryDateStr.split('/');
-        // Assume DD/MM/YYYY to YYYY-MM-DD
-        expiryDateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        if (parts.length === 3) {
+          expiryDateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
     }
 
     const validation = validateSIALicense(staff.sia_number || '', expiryDateStr);
@@ -97,6 +103,7 @@ export function SIALicenseVerification({ staffDetails, onRefresh }: SIALicenseVe
                 <TableHead>Staff Name</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>SIA Number</TableHead>
+                <TableHead>Expiry Date</TableHead>
                 <TableHead>Expiry Status</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
@@ -106,9 +113,22 @@ export function SIALicenseVerification({ staffDetails, onRefresh }: SIALicenseVe
                 filteredStaff.map((staff) => (
                   <TableRow key={staff.id} className={staff.hasIssue ? "bg-red-50/50" : ""}>
                     <TableCell className="font-medium">{staff.staff_name}</TableCell>
-                    <TableCell>{staff.role || '-'}</TableCell>
+                    <TableCell>
+                      {staff.role ? (
+                        <Badge variant="outline" className="font-normal">
+                          {staff.role}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
                     <TableCell className="font-mono text-xs">
                       {staff.sia_number || <span className="text-red-500 italic">Missing</span>}
+                    </TableCell>
+                    <TableCell>
+                      {staff.sia_expiry_date 
+                        ? format(new Date(staff.sia_expiry_date), 'dd/MM/yyyy')
+                        : '-'}
                     </TableCell>
                     <TableCell>
                       {staff.validation.errors.length > 0 ? (

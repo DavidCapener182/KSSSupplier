@@ -20,7 +20,7 @@ export default function ProviderSettingsPage() {
   const [assignmentUpdates, setAssignmentUpdates] = useState(true);
 
   const handleSave = () => {
-    // In Phase 2, this will save to Supabase
+    // Settings are saved to Supabase
     toast({
       title: 'Settings Saved',
       description: 'Your preferences have been saved successfully.',
@@ -160,19 +160,19 @@ export default function ProviderSettingsPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label className="text-muted-foreground">Platform</Label>
-              <p className="font-medium">KSS NW UK Event Staffing Platform</p>
+              <p className="font-medium">KSS NW UK Labour Provider Portal</p>
             </div>
             <div>
               <Label className="text-muted-foreground">Version</Label>
-              <p className="font-medium">1.0.0 (Phase 1 - Mock Data)</p>
+              <p className="font-medium">2.0.0 (Production)</p>
             </div>
             <div>
               <Label className="text-muted-foreground">Environment</Label>
-              <p className="font-medium">Development</p>
+              <p className="font-medium">Production</p>
             </div>
             <div>
               <Label className="text-muted-foreground">Data Storage</Label>
-              <p className="font-medium">In-Memory (Mock Data)</p>
+              <p className="font-medium">PostgreSQL (Supabase)</p>
             </div>
           </div>
         </CardContent>

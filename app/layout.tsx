@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 const montserrat = Montserrat({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "KSS NW UK Event Staffing Platform",
+  title: "KSS NW UK Labour Provider Portal",
   description: "Event staffing management platform for KSS NW UK 2026 Festival Season",
 };
 

@@ -32,3 +32,4 @@ CREATE POLICY "Admins can do everything on lazy_booking_alerts"
 CREATE TRIGGER update_lazy_booking_alerts_updated_at BEFORE UPDATE ON public.lazy_booking_alerts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+

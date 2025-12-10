@@ -52,7 +52,7 @@ export async function generateEventReport(
   // 2. Calculate Financials
   // Assuming invoices are linked to event
   const totalCost = invoices
-    .filter(i => i.status !== 'pending' && i.status !== 'proforma') // Only approved/paid invoices
+    .filter(i => i.status !== 'pending' && i.status !== 'purchase_order') // Only approved/paid invoices
     .reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
   // Budget - placeholder logic, assume budget is based on requirements * standard rate if not in DB
@@ -123,4 +123,5 @@ export async function generateEventReport(
     narrative
   };
 }
+
 

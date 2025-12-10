@@ -46,3 +46,4 @@ CREATE POLICY "Admins can do everything on provider_sentiment_trends"
   USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 -- Providers can read their own trends? Maybe not needed for V1, keeping it internal tool.
+

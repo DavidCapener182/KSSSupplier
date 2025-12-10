@@ -48,8 +48,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#2C2C2C] p-4 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[100px]" />
-      <div className="absolute bottom-[-10%] left-[-5%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[100px]" />
+      <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-5%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[100px] pointer-events-none" />
       
       <Card className="w-full max-w-md border-none shadow-2xl bg-white/95 backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center pb-8">
@@ -76,7 +76,8 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
                   required
-                  disabled={isLoading || authLoading}
+                  disabled={isLoading}
+                  autoComplete="email"
                   className="pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-all duration-200"
                 />
               </div>
@@ -97,7 +98,8 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  disabled={isLoading || authLoading}
+                  disabled={isLoading}
+                  autoComplete="current-password"
                   className="pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-all duration-200"
                 />
               </div>
@@ -105,7 +107,7 @@ export default function LoginPage() {
             <Button 
               type="submit" 
               className="w-full bg-primary hover:bg-primary/90 text-white font-semibold shadow-lg shadow-primary/20 h-11" 
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -123,7 +125,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4 pt-4 pb-8 text-center border-t bg-gray-50/50 rounded-b-xl">
           <p className="text-xs text-gray-500">
-            Please enter your credentials to access the KSS NW UK Event Staffing Portal.
+            Please enter your credentials to access the KSS NW UK Labour Provider Portal.
           </p>
         </CardFooter>
       </Card>

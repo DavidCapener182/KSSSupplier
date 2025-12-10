@@ -16,6 +16,7 @@ interface ParsedStaff {
   staff_name: string;
   role?: 'Manager' | 'Supervisor' | 'SIA' | 'Steward';
   sia_number?: string;
+  sia_expiry_date?: string;
   pnc_info?: string;
   row: number;
   valid: boolean;
@@ -81,7 +82,7 @@ export function StaffBulkUpload({ assignmentId, onUpload }: StaffBulkUploadProps
         staff_name: columns[0] || '',
         role,
         sia_number: columns[2] || undefined,
-        pnc_info: columns[3] || undefined,
+        sia_expiry_date: columns[3] || undefined,
         row,
         valid: errors.length === 0,
         errors,
@@ -147,11 +148,20 @@ export function StaffBulkUpload({ assignmentId, onUpload }: StaffBulkUploadProps
       
       const parsed: ParsedStaff[] = data.staff.map((s: any, index: number) => {
         const errors = s.validation?.errors || [];
+        // Extract expiry date from AI response (could be in various formats)
+        let expiryDate = s.expiryDate || s.siaExpiryDate;
+        // If expiry date is in pnc_info format "Expiry: DD/MM/YYYY", extract it
+        if (!expiryDate && s.pncInfo) {
+          const expiryMatch = s.pncInfo.match(/Expiry:\s*(\d{2}\/\d{2}\/\d{4})/);
+          if (expiryMatch) {
+            expiryDate = expiryMatch[1];
+          }
+        }
         return {
           staff_name: s.name,
           role: s.role,
           sia_number: s.siaNumber,
-          pnc_info: s.expiryDate ? `Expiry: ${s.expiryDate}` : undefined,
+          sia_expiry_date: expiryDate,
           row: index + 1,
           valid: errors.length === 0,
           errors: errors,
@@ -187,7 +197,7 @@ export function StaffBulkUpload({ assignmentId, onUpload }: StaffBulkUploadProps
         staff_name: s.staff_name,
         role: s.role,
         sia_number: s.sia_number,
-        pnc_info: s.pnc_info,
+        sia_expiry_date: s.sia_expiry_date,
       }));
 
     if (validStaff.length === 0) {
@@ -243,7 +253,7 @@ export function StaffBulkUpload({ assignmentId, onUpload }: StaffBulkUploadProps
               accept=".csv"
               maxSize={5}
               label="Upload CSV File"
-              description="CSV format: Staff Name, Role, SIA Number, PNC Info"
+              description="CSV format: Staff Name, Role, SIA Number, SIA Expiry Date (DD/MM/YYYY)"
             />
             <div className="text-center sm:hidden">
               <Button variant="link" size="sm" onClick={handleDownloadTemplate}>
@@ -305,7 +315,7 @@ export function StaffBulkUpload({ assignmentId, onUpload }: StaffBulkUploadProps
                     <TableHead>Staff Name</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>SIA Number</TableHead>
-                    <TableHead>Details</TableHead>
+                    <TableHead>Expiry Date</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -315,10 +325,10 @@ export function StaffBulkUpload({ assignmentId, onUpload }: StaffBulkUploadProps
                       <TableCell className="font-medium">{staff.staff_name || '-'}</TableCell>
                       <TableCell>{staff.role || '-'}</TableCell>
                       <TableCell className="font-mono text-xs">{staff.sia_number || '-'}</TableCell>
-                      <TableCell className="text-xs text-gray-500 max-w-[200px] truncate" title={staff.pnc_info}>
-                        {staff.pnc_info || '-'}
+                      <TableCell className="text-xs">{staff.sia_expiry_date || '-'}</TableCell>
+                      <TableCell>
                         {staff.confidence !== undefined && staff.confidence < 0.9 && (
-                          <Badge variant="outline" className="ml-2 text-xs border-orange-200 text-orange-700">
+                          <Badge variant="outline" className="text-xs border-orange-200 text-orange-700">
                             Low Confidence
                           </Badge>
                         )}

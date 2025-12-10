@@ -5,10 +5,16 @@ import { revalidatePath } from 'next/cache';
 
 export type ScanResult = {
   success: boolean;
-  status: 'verified' | 'unlisted' | 'duplicate' | 'error';
+  status: 'verified' | 'unlisted' | 'duplicate' | 'error' | 'signed_out';
   staffName?: string;
   providerName?: string;
+  role?: string; // Staff role (Manager, Supervisor, SIA, Steward)
   siaNumber?: string; // The scanned SIA badge number
+  startTime?: string; // Shift start time
+  endTime?: string; // Shift end time
+  signInTime?: string; // Sign in time (for sign-out scans)
+  signOutTime?: string; // Sign out time (for sign-out scans)
+  isSignOut?: boolean; // Whether this is a sign-out scan
   timestamp: string;
   message: string;
 };
@@ -24,30 +30,114 @@ export async function processScan(
   try {
     // 0. Configuration: Duplicate Window
     const duplicateWindowMinutes = parseInt(process.env.NEXT_PUBLIC_DUPLICATE_CHECK_WINDOW_MINUTES || '5');
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - duplicateWindowMinutes * 60 * 1000).toISOString();
     
-    // 1. DUPLICATE CHECK: Did they already check in recently?
+    // 1. DUPLICATE CHECK: Did they already check in recently (within 5 minutes)?
     // We check if there is a check-in for this SIA number in this event within the window
-    const windowStart = new Date(Date.now() - duplicateWindowMinutes * 60 * 1000).toISOString();
-    
-    const { data: existingCheckIn } = await supabase
+    const { data: recentCheckIn } = await supabase
       .from('event_checkins')
-      .select('check_in_time')
+      .select('id, check_in_time, sign_in_time')
       .eq('event_id', eventId)
       .eq('sia_number', cleanSia)
       .gt('check_in_time', windowStart)
-      .single();
+      .order('check_in_time', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (existingCheckIn) {
+    if (recentCheckIn) {
       return {
         success: false,
         status: 'duplicate',
-        siaNumber: cleanSia, // Include the scanned SIA number
-        timestamp: new Date().toISOString(),
-        message: `Already checked in at ${new Date(existingCheckIn.check_in_time).toLocaleTimeString()}`
+        siaNumber: cleanSia,
+        timestamp: now.toISOString(),
+        message: `Already checked in at ${new Date(recentCheckIn.check_in_time).toLocaleTimeString()}`
       };
     }
 
-    // 2. VERIFICATION: Are they on the list for this event?
+    // 2. SIGN-OUT CHECK: Is there an active check-in (signed in but not signed out) more than 5 minutes ago?
+    // Find the most recent check-in for this SIA that doesn't have a sign_out_time
+    const { data: activeCheckIn } = await supabase
+      .from('event_checkins')
+      .select('id, sign_in_time, check_in_time, staff_name, staff_detail_id, provider_id')
+      .eq('event_id', eventId)
+      .eq('sia_number', cleanSia)
+      .is('sign_out_time', null)
+      .order('check_in_time', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // If we found an active check-in, this is a sign-out
+    if (activeCheckIn) {
+      const signOutTime = now.toISOString();
+      
+      // Get staff details for the sign-out display BEFORE updating
+      let staffName = activeCheckIn.staff_name || 'Unknown Staff';
+      let role: string | undefined;
+      let providerName = 'Unknown Provider';
+
+      if (activeCheckIn.staff_detail_id) {
+        const { data: staffDetail } = await supabase
+          .from('staff_details')
+          .select(`
+            staff_name,
+            role,
+            assignments!inner (
+              provider_id,
+              providers ( company_name )
+            )
+          `)
+          .eq('id', activeCheckIn.staff_detail_id)
+          .maybeSingle();
+
+        if (staffDetail) {
+          staffName = staffDetail.staff_name || staffName;
+          role = staffDetail.role;
+          const assignment = Array.isArray(staffDetail.assignments) ? staffDetail.assignments[0] : staffDetail.assignments;
+          providerName = (assignment?.providers as any)?.company_name || providerName;
+        }
+      } else if (activeCheckIn.provider_id) {
+        const { data: provider } = await supabase
+          .from('providers')
+          .select('company_name')
+          .eq('id', activeCheckIn.provider_id)
+          .maybeSingle();
+        
+        if (provider) {
+          providerName = provider.company_name;
+        }
+      }
+
+      // Update the check-in with sign_out_time
+      const { error: updateError } = await supabase
+        .from('event_checkins')
+        .update({ sign_out_time: signOutTime })
+        .eq('id', activeCheckIn.id);
+
+      if (updateError) {
+        console.error('Error updating sign-out time:', updateError);
+        throw updateError;
+      }
+
+      revalidatePath(`/admin/events/${eventId}/live`);
+
+      return {
+        success: true,
+        status: 'signed_out',
+        staffName,
+        providerName,
+        role,
+        siaNumber: cleanSia,
+        signInTime: activeCheckIn.sign_in_time || activeCheckIn.check_in_time,
+        signOutTime: signOutTime,
+        isSignOut: true,
+        timestamp: signOutTime,
+        message: 'Signed Out Successfully'
+      };
+    }
+
+    // 3. SIGN-IN: No active check-in found, so this is a new sign-in
+    // VERIFICATION: Are they on the list for this event?
     // We join assignments to ensure we only check staff for THIS event
     const { data: match } = await supabase
       .from('staff_details')
@@ -55,6 +145,7 @@ export async function processScan(
         id, 
         staff_name, 
         sia_number,
+        role,
         assignments!inner ( 
           id,
           event_id,
@@ -66,25 +157,46 @@ export async function processScan(
       .eq('assignments.event_id', eventId) // Crucial: Only check this event's assignments
       .maybeSingle(); // Use maybeSingle() to handle no results gracefully
 
-    // 3. LOGIC: Determine status
+    // 4. LOGIC: Determine status
     const isVerified = !!match;
     
     const staffName = match?.staff_name || 'Unknown Staff';
+    const role = match?.role || undefined;
     // Handle assignments as array (from inner join)
     const assignment = Array.isArray(match?.assignments) ? match.assignments[0] : match?.assignments;
     const providerId = assignment?.provider_id || null;
     const providerName = (assignment?.providers as any)?.company_name || 'Unknown Provider';
+    const assignmentId = assignment?.id || null;
+    
+    // Get shift times for this assignment
+    let startTime: string | undefined;
+    let endTime: string | undefined;
+    if (assignmentId) {
+      const { data: staffTimes } = await supabase
+        .from('staff_times')
+        .select('start_time, end_time, shift_number')
+        .eq('assignment_id', assignmentId)
+        .order('shift_number', { ascending: true })
+        .limit(1);
+      
+      if (staffTimes && staffTimes.length > 0) {
+        startTime = staffTimes[0].start_time;
+        endTime = staffTimes[0].end_time;
+      }
+    }
 
-    // 4. RECORD: Save to database
+    // 5. RECORD: Save sign-in to database
+    const signInTime = now.toISOString();
     const { error, data: insertedData } = await supabase.from('event_checkins').insert({
       event_id: eventId,
       staff_detail_id: match?.id || null,
       sia_number: cleanSia,
       staff_name: staffName,
       provider_id: providerId,
-      verified: isVerified, // Will be true for all scans during testing
+      verified: isVerified,
       check_in_method: method === 'ocr_scan' ? 'qr_scan' : method, // OCR is treated as qr_scan in DB
-      is_duplicate: false // We already checked for duplicates within window
+      is_duplicate: false, // We already checked for duplicates within window
+      sign_in_time: signInTime // Set sign_in_time for new check-ins
     }).select();
 
     if (error) {
@@ -96,7 +208,7 @@ export async function processScan(
     
     console.log('Check-in recorded successfully:', insertedData);
 
-    // 5. RESPONSE
+    // 6. RESPONSE
     revalidatePath(`/admin/events/${eventId}/live`);
     
     return {
@@ -104,8 +216,13 @@ export async function processScan(
       status: isVerified ? 'verified' : 'unlisted',
       staffName,
       providerName,
-      siaNumber: cleanSia, // Include the scanned SIA number
-      timestamp: new Date().toISOString(),
+      role,
+      siaNumber: cleanSia,
+      startTime,
+      endTime,
+      signInTime: signInTime,
+      isSignOut: false,
+      timestamp: signInTime,
       message: isVerified ? 'Access Granted' : 'Warning: Staff not on event list'
     };
 
@@ -240,8 +357,11 @@ export async function getRecentScans(eventId: string, limit: number = 10): Promi
     .select(`
       id,
       check_in_time,
+      sign_in_time,
+      sign_out_time,
       staff_name,
       sia_number,
+      staff_detail_id,
       provider_id,
       verified,
       is_duplicate,
@@ -253,10 +373,22 @@ export async function getRecentScans(eventId: string, limit: number = 10): Promi
   
   if (error) throw error;
   
+  // Get staff detail IDs to fetch roles
+  const staffDetailIds = (data || []).filter(c => c.staff_detail_id).map(c => c.staff_detail_id);
+  const { data: staffDetails } = staffDetailIds.length > 0
+    ? await supabase
+        .from('staff_details')
+        .select('id, role')
+        .in('id', staffDetailIds)
+    : { data: [] };
+  
+  const roleMap = new Map(staffDetails?.map(sd => [sd.id, sd.role]) || []);
+  
   return (data || []).map(checkIn => {
     const isSteward = checkIn.sia_number === 'STEWARD';
     let staffName = checkIn.staff_name;
     let providerName = (checkIn.providers as any)?.company_name;
+    const role = checkIn.staff_detail_id ? roleMap.get(checkIn.staff_detail_id) : undefined;
     
     // For stewards, parse provider name from staff_name if stored as "Name | Provider"
     if (isSteward && !providerName && staffName.includes(' | ')) {
@@ -268,25 +400,37 @@ export async function getRecentScans(eventId: string, limit: number = 10): Promi
       providerName = 'Unknown Provider';
     }
     
+    const signInTime = checkIn.sign_in_time || checkIn.check_in_time;
+    const signOutTime = checkIn.sign_out_time;
+    const isSignOut = !!signOutTime;
+
     return {
       id: checkIn.id,
       success: true,
-      status: checkIn.is_duplicate 
-        ? 'duplicate' 
-        : checkIn.verified 
-          ? 'verified' 
-          : 'unlisted',
+      status: isSignOut 
+        ? 'signed_out'
+        : checkIn.is_duplicate 
+          ? 'duplicate' 
+          : checkIn.verified 
+            ? 'verified' 
+            : 'unlisted',
       staffName: staffName,
       providerName: providerName || 'Unknown Provider',
+      role,
       siaNumber: checkIn.sia_number,
+      signInTime: signInTime,
+      signOutTime: signOutTime,
+      isSignOut: isSignOut,
       timestamp: checkIn.check_in_time,
       message: isSteward 
         ? 'Steward Check-In'
-        : checkIn.is_duplicate 
-          ? 'Duplicate scan' 
-          : checkIn.verified 
-            ? 'Access Granted' 
-            : 'Warning: Staff not on event list'
+        : isSignOut
+          ? 'Signed Out'
+          : checkIn.is_duplicate 
+            ? 'Duplicate scan' 
+            : checkIn.verified 
+              ? 'Access Granted' 
+              : 'Warning: Staff not on event list'
     };
   });
 }
@@ -344,7 +488,10 @@ export async function getCheckInStatistics(eventId: string): Promise<CheckInStat
 export type VerifiedCheckIn = {
   id: string;
   checkInTime: string;
+  signInTime?: string;
+  signOutTime?: string;
   staffName: string;
+  role?: string;
   siaNumber: string;
   siaExpiryDate?: string;
   startTime?: string;
@@ -361,6 +508,8 @@ export async function getVerifiedCheckIns(eventId: string): Promise<VerifiedChec
     .select(`
       id,
       check_in_time,
+      sign_in_time,
+      sign_out_time,
       staff_name,
       sia_number,
       staff_detail_id,
@@ -382,11 +531,11 @@ export async function getVerifiedCheckIns(eventId: string): Promise<VerifiedChec
   const staffDetailIds = checkIns.filter(c => c.staff_detail_id).map(c => c.staff_detail_id);
   const providerIds = checkIns.filter(c => c.provider_id).map(c => c.provider_id);
   
-  // Get staff details with assignments
+  // Get staff details with assignments and expiry dates
   const { data: staffDetails } = staffDetailIds.length > 0
     ? await supabase
         .from('staff_details')
-        .select('id, assignment_id')
+        .select('id, assignment_id, role, sia_expiry_date')
         .in('id', staffDetailIds)
     : { data: [] };
   
@@ -401,16 +550,10 @@ export async function getVerifiedCheckIns(eventId: string): Promise<VerifiedChec
         .order('shift_number', { ascending: true })
     : { data: [] };
   
-  // Get SIA expiry dates
-  const { data: siaVerifications } = staffDetailIds.length > 0
-    ? await supabase
-        .from('sia_license_verifications')
-        .select('staff_detail_id, expiry_date')
-        .in('staff_detail_id', staffDetailIds)
-    : { data: [] };
-  
   // Create maps for quick lookup
   const assignmentMap = new Map(staffDetails?.map(sd => [sd.id, sd.assignment_id]) || []);
+  const roleMap = new Map(staffDetails?.map(sd => [sd.id, sd.role]) || []);
+  const expiryMap = new Map(staffDetails?.map(sd => [sd.id, sd.sia_expiry_date]) || []);
   const timesMap = new Map<string, { start_time: string; end_time: string }>();
   staffTimes?.forEach(st => {
     const key = st.assignment_id;
@@ -418,18 +561,21 @@ export async function getVerifiedCheckIns(eventId: string): Promise<VerifiedChec
       timesMap.set(key, { start_time: st.start_time, end_time: st.end_time });
     }
   });
-  const expiryMap = new Map(siaVerifications?.map(sv => [sv.staff_detail_id, sv.expiry_date]) || []);
   
   // Build result
   return checkIns.map(checkIn => {
     const assignmentId = checkIn.staff_detail_id ? assignmentMap.get(checkIn.staff_detail_id) : null;
     const times = assignmentId ? timesMap.get(assignmentId) : null;
     const expiryDate = checkIn.staff_detail_id ? expiryMap.get(checkIn.staff_detail_id) : undefined;
+    const role = checkIn.staff_detail_id ? roleMap.get(checkIn.staff_detail_id) : undefined;
     
     return {
       id: checkIn.id,
       checkInTime: checkIn.check_in_time,
+      signInTime: checkIn.sign_in_time || checkIn.check_in_time,
+      signOutTime: checkIn.sign_out_time,
       staffName: checkIn.staff_name,
+      role,
       siaNumber: checkIn.sia_number,
       siaExpiryDate: expiryDate,
       startTime: times?.start_time,

@@ -97,9 +97,9 @@ export default function ProviderDetailPage() {
     return providerInvoices.reduce(
       (acc, invoice) => {
         const amount = invoice.amount || 0;
-        if (invoice.status === 'proforma') {
-          acc.proformaValue += amount;
-          acc.proformaCount += 1;
+        if (invoice.status === 'purchase_order') {
+          acc.purchaseOrderValue += amount;
+          acc.purchaseOrderCount += 1;
         } else {
           acc.invoiceValue += amount;
           acc.invoiceCount += 1;
@@ -110,7 +110,7 @@ export default function ProviderDetailPage() {
         }
         return acc;
       },
-      { proformaValue: 0, proformaCount: 0, invoiceValue: 0, invoiceCount: 0, paidValue: 0, paidCount: 0 }
+      { purchaseOrderValue: 0, purchaseOrderCount: 0, invoiceValue: 0, invoiceCount: 0, paidValue: 0, paidCount: 0 }
     );
   }, [providerInvoices]);
 
@@ -183,11 +183,11 @@ export default function ProviderDetailPage() {
         </Card>
         <Card className="h-full flex flex-col">
           <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
-            <CardDescription>Proforma</CardDescription>
-            <CardTitle className="text-2xl">{currencyFormatter.format(invoiceTotals.proformaValue)}</CardTitle>
+            <CardDescription>Purchase Order</CardDescription>
+            <CardTitle className="text-2xl">{currencyFormatter.format(invoiceTotals.purchaseOrderValue)}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-gray-600">
-            {invoiceTotals.proformaCount} proforma{invoiceTotals.proformaCount === 1 ? '' : 's'}
+            {invoiceTotals.purchaseOrderCount} purchase order{invoiceTotals.purchaseOrderCount === 1 ? '' : 's'}
           </CardContent>
         </Card>
       </div>

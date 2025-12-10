@@ -7,7 +7,7 @@ export function generateInvoiceHTML(
   assignments: Assignment[],
   providers: Provider[],
   staffTimesMap: Map<string, StaffTimes[]>,
-  isProforma: boolean = false,
+  isPurchaseOrder: boolean = false,
   agreementContent?: string
 ): string {
   // Extract hourly rates from agreement content, or use defaults
@@ -144,8 +144,8 @@ export function generateInvoiceHTML(
 
   const vat = grandTotal * 0.2;
   const totalWithVat = grandTotal + vat;
-  const documentNumber = isProforma 
-    ? `PROFORMA-${event.id.substring(0, 8).toUpperCase()}-${format(new Date(), 'yyyyMMdd')}`
+  const documentNumber = isPurchaseOrder 
+    ? `PO-${event.id.substring(0, 8).toUpperCase()}-${format(new Date(), 'yyyyMMdd')}`
     : `INV-${event.id.substring(0, 8).toUpperCase()}-${format(new Date(), 'yyyyMMdd')}`;
 
   return `
@@ -283,10 +283,10 @@ export function generateInvoiceHTML(
         </div>
       </div>
 
-      <div class="title">${isProforma ? 'PROFORMA INVOICE' : 'INVOICE'}</div>
+      <div class="title">${isPurchaseOrder ? 'PURCHASE ORDER INVOICE' : 'INVOICE'}</div>
 
       <div class="invoice-info">
-        <div><strong>${isProforma ? 'Proforma' : 'Invoice'} Number:</strong> ${documentNumber}</div>
+        <div><strong>${isPurchaseOrder ? 'Purchase Order' : 'Invoice'} Number:</strong> ${documentNumber}</div>
         <div><strong>Date:</strong> ${format(new Date(), 'dd MMMM yyyy')}</div>
       </div>
 
@@ -336,7 +336,7 @@ export function generateInvoiceHTML(
       <div class="payment-terms">
         <h4>Payment Terms:</h4>
         <p>KSS NW UK LTD will make payment to ${providers.length > 0 ? providers[0].company_name : 'the provider'} within 30 days of receiving a valid invoice.</p>
-        <p><strong>Important:</strong> Sign-in and sign-out times will be recorded on-site. The final invoice amounts will be based on actual recorded times, which will be updated within 5 days of the event end date. This proforma is an estimate based on scheduled times and may be adjusted based on actual attendance records.</p>
+        <p><strong>Important:</strong> Sign-in and sign-out times will be recorded on-site. The final invoice amounts will be based on actual recorded times, which will be updated within 5 days of the event end date. This purchase order is an estimate based on scheduled times and may be adjusted based on actual attendance records.</p>
         <p>Payment will be made to the account details provided by the provider during onboarding.</p>
       </div>
     </body>

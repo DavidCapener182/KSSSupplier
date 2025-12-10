@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
         .from('invoices')
         .select('amount')
         .eq('event_id', event.id)
-        .neq('status', 'proforma')
+        .neq('status', 'purchase_order')
         
       const totalCost = invoices ? invoices.reduce((sum: number, i: any) => sum + (i.amount || 0), 0) : 0
       const budget = totalCost * 0.95 // Mock budget
@@ -127,4 +127,5 @@ Deno.serve(async (req) => {
     })
   }
 })
+
 

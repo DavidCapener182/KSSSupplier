@@ -106,7 +106,7 @@ interface SupabaseDataStore {
   // Actions - Invoices
   loadInvoices: () => Promise<void>;
   uploadInvoice: (invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>, adminEmail?: string) => Promise<Invoice>;
-  updateInvoiceStatus: (id: string, status: 'pending' | 'approved' | 'paid' | 'proforma' | 'outstanding', paymentDate?: string) => Promise<void>;
+  updateInvoiceStatus: (id: string, status: 'pending' | 'approved' | 'paid' | 'purchase_order' | 'outstanding', paymentDate?: string) => Promise<void>;
   
   // Actions - Event Templates
   loadEventTemplates: () => Promise<void>;

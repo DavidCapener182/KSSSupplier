@@ -1,4 +1,4 @@
-# KSS NW UK Event Staffing Management Platform
+# KSS NW UK Labour Provider Portal
 
 Event staffing management platform for KSS NW UK 2026 Festival Season. This platform allows Admin users to create events, assign staffing requirements to Labour Provider companies, and track confirmations and performance. Each labour provider has a secure dashboard to view their assigned events, accept work, upload required staff details, communicate via chat, and manage invoices.
 

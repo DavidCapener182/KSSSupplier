@@ -107,8 +107,8 @@ export function exportInvoicesToCSV(
 }
 
 export function exportStaffDetailsTemplateCSV() {
-  const headers = ['Staff Name', 'Role', 'SIA Number', 'PNC Info'];
-  const exampleRow = ['John Doe', 'SIA', '1234567890123456', 'Address: 123 Main St Phone: 07123456789'];
+  const headers = ['Staff Name', 'Role', 'SIA Number', 'SIA Expiry Date (DD/MM/YYYY)'];
+  const exampleRow = ['John Doe', 'SIA', '1234567890123456', '26/02/2026'];
   
   const csvContent = [headers, exampleRow].map((row) => row.join(',')).join('\n');
   return csvContent;

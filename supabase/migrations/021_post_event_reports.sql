@@ -27,3 +27,4 @@ CREATE POLICY "Admins can do everything on event_success_reports"
   FOR ALL
   USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
+
