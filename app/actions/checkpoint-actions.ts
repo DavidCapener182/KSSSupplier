@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { searchSIARegister, SIARegisterResult } from './sia-register-actions';
 
 export type ScanResult = {
   success: boolean;
@@ -17,6 +18,7 @@ export type ScanResult = {
   isSignOut?: boolean; // Whether this is a sign-out scan
   timestamp: string;
   message: string;
+  registerCheck?: SIARegisterResult; // SIA register verification result
 };
 
 export async function processScan(
@@ -121,6 +123,16 @@ export async function processScan(
 
       revalidatePath(`/admin/events/${eventId}/live`);
 
+      // REGISTER CHECK: Verify SIA number against official register (if valid format)
+      let registerCheck: SIARegisterResult | undefined;
+      if (cleanSia && /^\d{16}$/.test(cleanSia)) {
+        try {
+          registerCheck = await searchSIARegister(cleanSia);
+        } catch (error) {
+          console.error('Error checking SIA register:', error);
+        }
+      }
+
       return {
         success: true,
         status: 'signed_out',
@@ -132,7 +144,8 @@ export async function processScan(
         signOutTime: signOutTime,
         isSignOut: true,
         timestamp: signOutTime,
-        message: 'Signed Out Successfully'
+        message: 'Signed Out Successfully',
+        registerCheck
       };
     }
 
@@ -208,7 +221,18 @@ export async function processScan(
     
     console.log('Check-in recorded successfully:', insertedData);
 
-    // 6. RESPONSE
+    // 6. REGISTER CHECK: Verify SIA number against official register (if valid format)
+    let registerCheck: SIARegisterResult | undefined;
+    if (cleanSia && /^\d{16}$/.test(cleanSia)) {
+      try {
+        registerCheck = await searchSIARegister(cleanSia);
+      } catch (error) {
+        console.error('Error checking SIA register:', error);
+        // Don't fail the scan if register check fails
+      }
+    }
+
+    // 7. RESPONSE
     revalidatePath(`/admin/events/${eventId}/live`);
     
     return {
@@ -223,7 +247,8 @@ export async function processScan(
       signInTime: signInTime,
       isSignOut: false,
       timestamp: signInTime,
-      message: isVerified ? 'Access Granted' : 'Warning: Staff not on event list'
+      message: isVerified ? 'Access Granted' : 'Warning: Staff not on event list',
+      registerCheck
     };
 
   } catch (error: any) {

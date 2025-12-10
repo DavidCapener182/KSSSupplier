@@ -1,6 +1,17 @@
 import { supabase } from './client';
 import type { User } from '@/lib/types';
 
+// Helper function to add timeout to promises
+function withTimeout<T>(promise: Promise<T> | { then: (onfulfilled?: any, onrejected?: any) => any }, timeoutMs: number = 2000): Promise<T> {
+  const promiseLike = Promise.resolve(promise) as Promise<T>;
+  return Promise.race([
+    promiseLike,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+    )
+  ]);
+}
+
 export async function signIn(email: string, password: string): Promise<{ user: User; session: any }> {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -16,31 +27,19 @@ export async function signIn(email: string, password: string): Promise<{ user: U
     throw new Error('No user data returned from authentication');
   }
 
-  // Get user role from public.users table
+  // Get user role from public.users table - optimized for speed
   try {
-    // Try RPC first as it's safer with RLS
-    const { data: userData, error: userError } = await supabase.rpc('get_my_profile');
-
-    if (!userError && userData) {
-      return {
-        user: {
-          id: data.user.id,
-          email: data.user.email!,
-          role: userData.role as 'admin' | 'provider',
-          forcePasswordChange: (data.user.user_metadata as any)?.force_password_change === true || userData.force_password_change === true,
-        },
-        session: data.session,
-      };
-    }
-
-    // Fallback to direct query if RPC fails
-    console.warn('RPC get_my_profile failed, falling back to direct query:', userError);
-    
-    const { data: directUserData, error: directError } = await supabase
+    // Skip RPC (it doesn't exist) and go straight to optimized direct query
+    // Only select the fields we need for faster query
+    const queryPromise = supabase
       .from('users')
-      .select('*')
+      .select('role, force_password_change')
       .eq('id', data.user.id)
       .single();
+    
+    // Add timeout to fail fast (2 seconds)
+    const result = await withTimeout(queryPromise, 2000) as { data: { role: string; force_password_change: boolean } | null; error: any };
+    const { data: directUserData, error: directError } = result;
       
     if (!directError && directUserData) {
       return {
@@ -48,7 +47,7 @@ export async function signIn(email: string, password: string): Promise<{ user: U
           id: data.user.id,
           email: data.user.email!,
           role: directUserData.role as 'admin' | 'provider',
-          forcePasswordChange: (data.user.user_metadata as any)?.force_password_change === true || (directUserData as any).force_password_change === true,
+          forcePasswordChange: (data.user.user_metadata as any)?.force_password_change === true || directUserData.force_password_change === true,
         },
         session: data.session,
       };
@@ -68,10 +67,23 @@ export async function signIn(email: string, password: string): Promise<{ user: U
       };
     }
 
-    const finalError = directError || userError || new Error('User role not found');
-    throw finalError;
-  } catch (err) {
-    console.error('Unexpected error fetching user role:', err);
+    throw directError || new Error('User role not found');
+  } catch (err: any) {
+    // If timeout or other error, use fallback for known admin
+    if (data.user.email === 'david.capener@kssnwltd.co.uk') {
+      console.warn('Query failed, using hardcoded admin role for david.capener@kssnwltd.co.uk');
+      return {
+        user: {
+          id: data.user.id,
+          email: data.user.email!,
+          role: 'admin',
+          forcePasswordChange: false,
+        },
+        session: data.session,
+      };
+    }
+    
+    console.error('Error fetching user role:', err);
     throw err;
   }
 }
@@ -87,31 +99,22 @@ export async function getCurrentUser(): Promise<User | null> {
   if (!user) return null;
 
   try {
-    // Try RPC first
-    const { data: userData, error: rpcError } = await supabase.rpc('get_my_profile');
-
-    if (!rpcError && userData) {
-      return {
-        id: user.id,
-        email: user.email!,
-        role: userData.role as 'admin' | 'provider',
-        forcePasswordChange: (user.user_metadata as any)?.force_password_change === true || userData.force_password_change === true,
-      };
-    }
-
-    // Fallback to direct query
-    const { data: directUserData, error } = await supabase
+    // Skip RPC and use optimized direct query with timeout
+    const queryPromise = supabase
       .from('users')
-      .select('*')
+      .select('role, force_password_change')
       .eq('id', user.id)
       .single();
+    
+    const result = await withTimeout(queryPromise, 2000) as { data: { role: string; force_password_change: boolean } | null; error: any };
+    const { data: directUserData, error } = result;
     
     if (!error && directUserData) {
       return {
         id: user.id,
         email: user.email!,
         role: directUserData.role as 'admin' | 'provider',
-        forcePasswordChange: (user.user_metadata as any)?.force_password_change === true || (directUserData as any).force_password_change === true,
+        forcePasswordChange: (user.user_metadata as any)?.force_password_change === true || directUserData.force_password_change === true,
       };
     }
 
@@ -126,9 +129,19 @@ export async function getCurrentUser(): Promise<User | null> {
       };
     }
 
-    console.warn('Could not fetch user profile:', error || rpcError);
+    console.warn('Could not fetch user profile:', error);
     return null;
   } catch (err) {
+    // If timeout, use fallback for known admin
+    if (user.email === 'david.capener@kssnwltd.co.uk') {
+      return {
+        id: user.id,
+        email: user.email!,
+        role: 'admin',
+        forcePasswordChange: false,
+      };
+    }
+    
     console.error('Error in getCurrentUser:', err);
     return null;
   }

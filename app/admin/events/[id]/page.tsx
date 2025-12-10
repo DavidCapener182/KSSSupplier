@@ -1825,7 +1825,8 @@ export default function EventDetailPage() {
 
         <TabsContent value="staff" className="space-y-4 md:space-y-6">
           <SIALicenseVerification 
-            staffDetails={eventAssignments.flatMap(a => getStaffDetailsByAssignment(a.id))} 
+            staffDetails={eventAssignments.flatMap(a => getStaffDetailsByAssignment(a.id))}
+            assignments={eventAssignments}
           />
           
           <Card>

@@ -22,6 +22,11 @@ import {
   Settings,
   Moon,
   Sun,
+  FileStack,
+  Clock,
+  BarChart3,
+  HelpCircle,
+  Search,
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
@@ -32,11 +37,17 @@ import { useMessageNotifications } from '@/hooks/use-message-notifications';
 const adminNavItems = [
   { title: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { title: 'Events', href: '/admin/events', icon: Calendar },
+  { title: 'Templates', href: '/admin/events/templates', icon: FileStack },
   { title: 'Providers', href: '/admin/providers', icon: Users },
+  { title: 'Reports', href: '/admin/reports', icon: BarChart3 },
+  { title: 'Pending Approvals', href: '/admin/providers/pending', icon: Clock },
   { title: 'Messages', href: '/admin/messages', icon: MessageSquare },
   { title: 'Invoices', href: '/admin/invoices', icon: FileText },
+  { title: 'Data Search', href: '/admin/search', icon: Search },
   { title: 'Activity Log', href: '/admin/activity', icon: Activity },
   { title: 'Calendar', href: '/admin/calendar', icon: CalendarDays },
+  { title: 'Settings', href: '/admin/settings', icon: Settings },
+  { title: 'Help', href: '/admin/help', icon: HelpCircle },
 ];
 
 const providerNavItems = [
@@ -45,6 +56,8 @@ const providerNavItems = [
   { title: 'Messages', href: '/provider/messages', icon: MessageSquare },
   { title: 'Invoices', href: '/provider/invoices', icon: FileText },
   { title: 'Calendar', href: '/provider/calendar', icon: CalendarDays },
+  { title: 'Settings', href: '/provider/settings', icon: Settings },
+  { title: 'Help', href: '/provider/help', icon: HelpCircle },
 ];
 
 export function Navbar() {
@@ -96,14 +109,11 @@ export function Navbar() {
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
               <div className="p-4 flex-1 flex flex-col">
-                <nav className="space-y-1 flex-1" role="navigation" aria-label="Mobile menu">
+                <nav className="space-y-1 flex-1 overflow-y-auto" role="navigation" aria-label="Mobile menu">
                   {navItems.map((item) => {
-                    if (item.href === '/admin/settings' || item.href === '/provider/settings') {
-                      return null; // Settings will be in user menu
-                    }
                     const Icon = item.icon;
                     const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                  return (
+                    return (
                       <Link
                         key={item.href}
                         href={item.href}
@@ -128,20 +138,6 @@ export function Navbar() {
                       </Link>
                     );
                   })}
-                  <Separator className="my-2" />
-                  <Link
-                    href={user?.role === 'admin' ? '/admin/settings' : '/provider/settings'}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={cn(
-                      'flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                      pathname === '/admin/settings' || pathname === '/provider/settings'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    )}
-                  >
-                    <Settings className="h-5 w-5" />
-                    <span>Settings</span>
-                  </Link>
                   <Separator className="my-2" />
                 </nav>
                 <div className="mt-auto pt-4 space-y-1 border-t">

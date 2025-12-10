@@ -66,6 +66,24 @@ export default function LiveCheckPointPage() {
   const [verifiedCheckIns, setVerifiedCheckIns] = useState<VerifiedCheckIn[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedScans, setSelectedScans] = useState<Set<string>>(new Set());
+  const [showBrowserWarning, setShowBrowserWarning] = useState(false);
+  
+  // Check browser on mount
+  useEffect(() => {
+    const userAgent = navigator.userAgent;
+    const isChrome = userAgent.indexOf("Chrome") > -1;
+    const isEdge = userAgent.indexOf("Edg") > -1;
+    const isOpera = userAgent.indexOf("OPR") > -1;
+    
+    // Check if it's pure Chrome (not Edge, Opera, etc.)
+    // Note: This is a basic check. Some mobile browsers might identify differently.
+    // The goal is to warn users who might have issues with camera access (like Safari/Firefox)
+    const isPureChrome = isChrome && !isEdge && !isOpera;
+    
+    if (!isPureChrome) {
+      setShowBrowserWarning(true);
+    }
+  }, []);
   
   // Scanner Refs
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -898,30 +916,94 @@ export default function LiveCheckPointPage() {
       return (
         <div className={`flex flex-col items-center justify-center p-6 rounded-xl border-2 ${style.bg} animate-in zoom-in-50 duration-300`}>
           {style.icon}
-          <h2 className={`text-2xl font-bold ${style.text} uppercase mb-1`}>
+          <h2 className={`text-2xl font-bold ${style.text} uppercase mb-6`}>
             SIGNED OUT
           </h2>
-          <p className="text-lg font-semibold">{lastScan.staffName}</p>
-          {lastScan.role && (
-            <p className="text-sm font-medium bg-white/50 px-3 py-1 rounded border mt-1">
-              {lastScan.role}
-            </p>
-          )}
-          {lastScan.siaNumber && lastScan.siaNumber !== 'STEWARD' && (
-            <p className="text-base font-mono font-semibold mt-2 bg-white/50 px-3 py-1 rounded border">
-              SIA: {lastScan.siaNumber}
-            </p>
-          )}
-          <p className="text-sm opacity-75 mt-2">{lastScan.providerName}</p>
-          <div className="mt-3 space-y-1 text-sm">
-            <p className="font-medium bg-white/50 px-3 py-1 rounded border">
-              Sign In: {new Date(lastScan.signInTime).toLocaleTimeString()}
-            </p>
-            <p className="font-medium bg-white/50 px-3 py-1 rounded border">
-              Sign Out: {new Date(lastScan.signOutTime).toLocaleTimeString()}
-            </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+            {/* Left Column: Staff Details */}
+            <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-2">
+              {lastScan.siaNumber && lastScan.siaNumber !== 'STEWARD' && (
+                <p className="text-base font-mono font-bold bg-white/60 px-3 py-1 rounded border border-black/5 w-fit">
+                  SIA: {lastScan.siaNumber}
+                </p>
+              )}
+              
+              <p className="text-2xl font-bold text-gray-900">{lastScan.staffName}</p>
+              
+              {lastScan.role && (
+                <p className="text-sm font-semibold bg-white/60 px-3 py-1 rounded border border-black/5 w-fit">
+                  {lastScan.role}
+                </p>
+              )}
+              
+              <p className="text-base font-medium opacity-80">{lastScan.providerName}</p>
+              
+              <div className="space-y-1 mt-1 text-right">
+                <p className="text-sm font-medium bg-white/60 px-3 py-1 rounded border border-black/5 w-fit ml-auto">
+                  Sign In: {new Date(lastScan.signInTime).toLocaleTimeString()}
+                </p>
+                <p className="text-sm font-medium bg-white/60 px-3 py-1 rounded border border-black/5 w-fit ml-auto">
+                  Sign Out: {new Date(lastScan.signOutTime).toLocaleTimeString()}
+                </p>
+              </div>
+            </div>
+
+            {/* Right Column: Register Check */}
+            <div className="flex flex-col justify-start h-full">
+              {lastScan.registerCheck && lastScan.siaNumber && lastScan.siaNumber !== 'STEWARD' ? (
+                <div className={`w-full rounded-lg border-2 p-4 h-full ${lastScan.registerCheck.found ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                  <div className="flex items-center gap-2 mb-3 border-b border-black/5 pb-2">
+                    {lastScan.registerCheck.found ? (
+                      <>
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-base font-bold text-green-700">Found in Register</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-5 w-5 text-red-600" />
+                        <span className="text-base font-bold text-red-700">Not Found in Register</span>
+                      </>
+                    )}
+                  </div>
+                  {lastScan.registerCheck.found ? (
+                    <div className="text-sm space-y-2 text-left">
+                      {lastScan.registerCheck.licenceSector && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 font-medium">Sector:</span>
+                          <span className="font-semibold text-right">{lastScan.registerCheck.licenceSector}</span>
+                        </div>
+                      )}
+                      {lastScan.registerCheck.status && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 font-medium">Status:</span>
+                          <span className={`font-bold ${lastScan.registerCheck.status === 'Active' ? 'text-green-600' : 'text-amber-600'}`}>
+                            {lastScan.registerCheck.status}
+                          </span>
+                        </div>
+                      )}
+                      {lastScan.registerCheck.expiryDate && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 font-medium">Expires:</span>
+                          <span className="font-mono">{lastScan.registerCheck.expiryDate}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-red-600 font-medium mt-2">
+                      {lastScan.registerCheck.error || 'SIA number not found on official register'}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-sm text-gray-400 italic border-2 border-dashed border-gray-300 rounded-lg bg-white/20 p-4">
+                  {lastScan.siaNumber !== 'STEWARD' ? 'Register check unavailable' : 'No register check for stewards'}
+                </div>
+              )}
+            </div>
           </div>
-          <p className="text-xs mt-3 text-gray-500">{lastScan.message}</p>
+          
+          <p className="text-xs mt-6 text-gray-500 font-medium">{lastScan.message}</p>
         </div>
       );
     }
@@ -930,38 +1012,129 @@ export default function LiveCheckPointPage() {
     return (
       <div className={`flex flex-col items-center justify-center p-6 rounded-xl border-2 ${style.bg} animate-in zoom-in-50 duration-300`}>
         {style.icon}
-        <h2 className={`text-2xl font-bold ${style.text} uppercase mb-1`}>
+        <h2 className={`text-2xl font-bold ${style.text} uppercase mb-6`}>
           {isSteward ? 'STEWARD' : lastScan.status}
         </h2>
-        {lastScan.siaNumber && lastScan.siaNumber !== 'STEWARD' && (
-          <p className="text-base font-mono font-semibold mb-2 bg-white/50 px-3 py-1 rounded border">
-            SIA: {lastScan.siaNumber}
-          </p>
-        )}
-        {isSteward && (
-          <p className="text-base font-semibold mb-2 bg-white/50 px-3 py-1 rounded border text-yellow-800">
-            STEWARD CHECK-IN
-          </p>
-        )}
-        <p className="text-lg font-semibold">{lastScan.staffName}</p>
-        {lastScan.role && (
-          <p className="text-sm font-medium bg-white/50 px-3 py-1 rounded border">
-            {lastScan.role}
-          </p>
-        )}
-        <p className="text-sm opacity-75">{lastScan.providerName}</p>
-        {lastScan.startTime && lastScan.endTime && (
-          <p className="text-sm font-medium bg-white/50 px-3 py-1 rounded border mt-2">
-            Shift: {lastScan.startTime.substring(0, 5)} - {lastScan.endTime.substring(0, 5)}
-          </p>
-        )}
-        <p className="text-xs mt-2 text-gray-500">{lastScan.message}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+          {/* Left Column: Staff Details */}
+          <div className="flex flex-col items-center md:items-end text-center md:text-right space-y-2">
+            {lastScan.siaNumber && lastScan.siaNumber !== 'STEWARD' && (
+              <p className="text-base font-mono font-bold bg-white/60 px-3 py-1 rounded border border-black/5 w-fit">
+                SIA: {lastScan.siaNumber}
+              </p>
+            )}
+            {isSteward && (
+              <p className="text-base font-semibold mb-2 bg-white/50 px-3 py-1 rounded border text-yellow-800 w-fit">
+                STEWARD CHECK-IN
+              </p>
+            )}
+            
+            <p className="text-2xl font-bold text-gray-900">{lastScan.staffName}</p>
+            
+            {lastScan.role && (
+              <p className="text-sm font-semibold bg-white/60 px-3 py-1 rounded border border-black/5 w-fit">
+                {lastScan.role}
+              </p>
+            )}
+            
+            <p className="text-base font-medium opacity-80">{lastScan.providerName}</p>
+            
+            {lastScan.startTime && lastScan.endTime && (
+              <p className="text-sm font-medium bg-white/60 px-3 py-1 rounded border border-black/5 mt-1 w-fit">
+                Shift: {lastScan.startTime.substring(0, 5)} - {lastScan.endTime.substring(0, 5)}
+              </p>
+            )}
+          </div>
+
+          {/* Right Column: Register Check */}
+          <div className="flex flex-col justify-start h-full">
+            {lastScan.registerCheck && lastScan.siaNumber && lastScan.siaNumber !== 'STEWARD' ? (
+              <div className={`w-full rounded-lg border-2 p-4 h-full ${lastScan.registerCheck.found ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                <div className="flex items-center gap-2 mb-3 border-b border-black/5 pb-2">
+                  {lastScan.registerCheck.found ? (
+                    <>
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="text-base font-bold text-green-700">Found in Register</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-5 w-5 text-red-600" />
+                      <span className="text-base font-bold text-red-700">Not Found in Register</span>
+                    </>
+                  )}
+                </div>
+                {lastScan.registerCheck.found ? (
+                  <div className="text-sm space-y-2 text-left">
+                    {lastScan.registerCheck.licenceSector && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 font-medium">Sector:</span>
+                        <span className="font-semibold text-right">{lastScan.registerCheck.licenceSector}</span>
+                      </div>
+                    )}
+                    {lastScan.registerCheck.status && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 font-medium">Status:</span>
+                        <span className={`font-bold ${lastScan.registerCheck.status === 'Active' ? 'text-green-600' : 'text-amber-600'}`}>
+                          {lastScan.registerCheck.status}
+                        </span>
+                      </div>
+                    )}
+                    {lastScan.registerCheck.expiryDate && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 font-medium">Expires:</span>
+                        <span className="font-mono">{lastScan.registerCheck.expiryDate}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-red-600 font-medium mt-2">
+                    {lastScan.registerCheck.error || 'SIA number not found on official register'}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-gray-400 italic border-2 border-dashed border-gray-300 rounded-lg bg-white/20 p-4">
+                {isSteward ? 'No register check for stewards' : 'Register check unavailable'}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <p className="text-xs mt-6 text-gray-500 font-medium">{lastScan.message}</p>
       </div>
     );
   };
 
   return (
     <div className="max-w-7xl mx-auto p-4 space-y-6">
+      {showBrowserWarning && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 rounded-md shadow-sm">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertTriangle className="h-5 w-5 text-amber-400" aria-hidden="true" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-amber-700">
+                <span className="font-bold">Browser Warning:</span> For the best scanning performance and camera compatibility, please use <span className="font-bold">Google Chrome</span>. Other browsers may have issues accessing the camera or scanning barcodes.
+              </p>
+            </div>
+            <div className="ml-auto pl-3">
+              <div className="-mx-1.5 -my-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowBrowserWarning(false)}
+                  className="inline-flex rounded-md bg-amber-50 p-1.5 text-amber-500 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 focus:ring-offset-amber-50"
+                >
+                  <span className="sr-only">Dismiss</span>
+                  <X className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center sticky top-0 bg-background z-10 py-2 border-b">
          <div className="flex items-center gap-2">
             <Link href={`/admin/events/${id}`}>
