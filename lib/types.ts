@@ -136,7 +136,6 @@ export interface User {
   id: string;
   email: string;
   role: 'admin' | 'provider';
-  forcePasswordChange?: boolean;
 }
 
 export interface EventTemplate {

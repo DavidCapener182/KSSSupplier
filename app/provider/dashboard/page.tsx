@@ -85,7 +85,7 @@ export default function ProviderDashboard() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-white relative overflow-hidden group">
           <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-amber-50 to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
@@ -174,7 +174,7 @@ export default function ProviderDashboard() {
                         </div>
                       </div>
                       <div className="p-4 space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-2 gap-2 md:gap-4 text-sm">
                           {assignment.assigned_managers > 0 && (
                             <div className="p-2 bg-slate-50 rounded border">
                               <span className="block text-muted-foreground text-xs">Managers</span>
@@ -200,9 +200,9 @@ export default function ProviderDashboard() {
                             </div>
                           )}
                         </div>
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex flex-col md:flex-row gap-2 pt-2">
                           <Button 
-                            className="w-full bg-green-600 hover:bg-green-700 flex-1"
+                            className="w-full md:flex-1 bg-green-600 hover:bg-green-700"
                             onClick={async () => {
                               try {
                                 await acceptAssignment(assignment.id);
@@ -225,7 +225,7 @@ export default function ProviderDashboard() {
                           </Button>
                           <Button 
                             variant="outline" 
-                            className="w-full text-red-600 hover:bg-red-50 border-red-200 flex-1"
+                            className="w-full md:flex-1 text-red-600 hover:bg-red-50 border-red-200"
                             onClick={async () => {
                               try {
                                 await declineAssignment(assignment.id);

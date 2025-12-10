@@ -562,7 +562,7 @@ export default function ProviderEventDetailPage() {
               <CardDescription>Staff numbers you are providing</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
                 <div className="text-center p-4 border rounded-lg">
                   <div className="text-2xl font-bold">{assignment.assigned_managers}</div>
                   <div className="text-sm text-gray-600">Managers</div>
@@ -704,7 +704,7 @@ export default function ProviderEventDetailPage() {
                 <div className="space-y-4">
                   <div className="border rounded-lg p-4 space-y-3">
                     <h4 className="font-semibold">Add Staff Member</h4>
-                    <div className="grid gap-4 md:grid-cols-4">
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
                       <div className="space-y-2">
                         <Label>Staff Name</Label>
                         <Input
@@ -771,7 +771,30 @@ export default function ProviderEventDetailPage() {
                     {staffDetails.length > 0 ? (
                       <Card>
                         <CardContent className="p-0">
-                          <Table>
+                          <div className="block md:hidden space-y-3 p-4">
+                            {staffDetails.map((detail) => (
+                              <div key={detail.id} className="border rounded-lg p-4 space-y-2">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <p className="font-semibold">{detail.staff_name}</p>
+                                    {detail.role && (
+                                      <Badge variant="outline" className="mt-1">{detail.role}</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-sm text-muted-foreground space-y-1">
+                                  {detail.sia_number && (
+                                    <p>SIA: {detail.sia_number}</p>
+                                  )}
+                                  {detail.sia_expiry_date && (
+                                    <p>Expiry: {format(new Date(detail.sia_expiry_date), 'dd/MM/yyyy')}</p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="hidden md:block">
+                            <Table>
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Name</TableHead>
@@ -807,6 +830,7 @@ export default function ProviderEventDetailPage() {
                               ))}
                             </TableBody>
                           </Table>
+                          </div>
                         </CardContent>
                       </Card>
                     ) : (

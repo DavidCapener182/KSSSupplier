@@ -138,42 +138,57 @@ export function FileUpload({
       {description && <p className="text-sm text-gray-600">{description}</p>}
 
       {!selectedFile ? (
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={cn(
-            'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
-            isDragging
-              ? 'border-primary bg-primary/5'
-              : 'border-gray-300 hover:border-primary/50',
-            error && 'border-red-500'
-          )}
-          role="button"
-          tabIndex={0}
-          aria-label="File upload drop zone"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              fileInputRef.current?.click();
-            }
-          }}
-        >
-          <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">
-              Drag and drop a file here, or{' '}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-primary hover:underline"
-              >
-                browse
-              </button>
-            </p>
-            <p className="text-xs text-gray-500">
-              Max file size: {maxSize}MB {accept && `• Accepted: ${accept}`}
-            </p>
+        <>
+          <div className="block md:hidden">
+            <Button 
+              variant="outline"
+              type="button"
+              onClick={() => fileInputRef.current?.click()} 
+              className="w-full h-32 border-dashed border-2 flex flex-col gap-2 hover:bg-muted/50"
+            >
+              <Upload className="h-8 w-8 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Tap to select file</span>
+              {accept && <span className="text-xs text-muted-foreground/70">Max {maxSize}MB • {accept}</span>}
+            </Button>
+          </div>
+
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={cn(
+              'hidden md:block border-2 border-dashed rounded-lg p-8 text-center transition-colors',
+              isDragging
+                ? 'border-primary bg-primary/5'
+                : 'border-gray-300 hover:border-primary/50',
+              error && 'border-red-500'
+            )}
+            role="button"
+            tabIndex={0}
+            aria-label="File upload drop zone"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+          >
+            <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">
+                Drag and drop a file here, or{' '}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-primary hover:underline"
+                >
+                  browse
+                </button>
+              </p>
+              <p className="text-xs text-gray-500">
+                Max file size: {maxSize}MB {accept && `• Accepted: ${accept}`}
+              </p>
+            </div>
           </div>
           <Input
             ref={fileInputRef}
@@ -183,7 +198,7 @@ export function FileUpload({
             className="hidden"
             aria-label={label || 'File upload'}
           />
-        </div>
+        </>
       ) : (
         <div className="border rounded-lg p-4 bg-gray-50 space-y-3">
           {previewUrl && (

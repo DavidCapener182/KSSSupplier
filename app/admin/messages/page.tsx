@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { Send, Trash, User, MessageSquare, Paperclip, Users, CheckSquare, Square } from 'lucide-react';
+import { Send, Trash, User, MessageSquare, Paperclip, Users, CheckSquare, Square, ArrowLeft } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
@@ -61,12 +61,14 @@ export default function MessagesPage() {
   const [isSendingBulk, setIsSendingBulk] = useState(false);
   const [showOpsBot, setShowOpsBot] = useState(false);
   const [activeEventId, setActiveEventId] = useState<string>('');
+  const [showMobileChat, setShowMobileChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const selectedProvider = providers.find((p) => p.id === selectedProviderId);
 
   useEffect(() => {
     if (selectedProviderId) {
+      setShowMobileChat(true);
       // Fetch the most recent or upcoming assignment's event ID
       const fetchActiveEvent = async () => {
         const { data } = await supabase
@@ -281,6 +283,7 @@ export default function MessagesPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3 h-[calc(100vh-200px)]">
+        <div className={`${showMobileChat ? 'hidden' : 'block'} md:block h-full`}>
         <Card className="border-none shadow-md flex flex-col h-full bg-card">
           <CardHeader className="border-b border-border pb-4">
             <div className="flex items-center justify-between">
@@ -389,10 +392,20 @@ export default function MessagesPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
 
-        <Card className="md:col-span-2 border-none shadow-md flex flex-col h-full bg-card">
+        <div className={`${showMobileChat ? 'block' : 'hidden'} md:block md:col-span-2 h-full`}>
+        <Card className="border-none shadow-md flex flex-col h-full bg-card">
           <CardHeader className="border-b border-border flex flex-row items-center justify-between py-4">
             <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="md:hidden -ml-2 shrink-0" 
+                onClick={() => setShowMobileChat(false)}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               {bulkMode ? (
                 <>
                   <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
@@ -711,6 +724,7 @@ export default function MessagesPage() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );

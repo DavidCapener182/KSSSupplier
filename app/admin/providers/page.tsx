@@ -505,6 +505,75 @@ export default function ProvidersPage() {
                 Showing {filteredProviders.length} of {providersWithStats.length} providers (in this status)
               </div>
             </div>
+            <div className="block md:hidden space-y-4 p-4">
+              {paginatedProviders.map((provider) => (
+                <Card key={provider.id} className="p-4 border shadow-sm">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                          {provider.company_name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <Link href={`/admin/providers/${provider.id}`} className="font-semibold text-lg hover:underline">
+                            {provider.company_name}
+                          </Link>
+                          <div className="flex items-center gap-1 text-muted-foreground text-xs mt-0.5">
+                            <Mail className="h-3 w-3" />
+                            {provider.contact_email}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="shrink-0 ml-2">
+                      {provider.status === 'suspended' ? (
+                         <Badge variant="destructive">Suspended</Badge>
+                       ) : provider.isOnboarded ? (
+                         <Link href={`/admin/providers/${provider.id}/onboarding`}>
+                           <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/40 hover:bg-green-100 dark:hover:bg-green-900/30 cursor-pointer">Onboarded</Badge>
+                         </Link>
+                       ) : provider.status === 'pending' && provider.hasSignedAllDocs ? (
+                         <Link href={`/admin/providers/${provider.id}/onboarding`}>
+                           <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer">Awaiting</Badge>
+                         </Link>
+                       ) : (
+                         <Link href={`/admin/providers/${provider.id}/onboarding`}>
+                           <Badge variant="secondary" className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/40 hover:bg-amber-100 dark:hover:bg-amber-900/30 cursor-pointer">Pending</Badge>
+                         </Link>
+                       )}
+                       </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 text-sm pt-2 border-t">
+                      <div className="text-center">
+                        <span className="text-muted-foreground block text-xs">Events</span>
+                        <span className="font-medium">{provider.totalEvents}</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-muted-foreground block text-xs">Accepted</span>
+                        <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-transparent">{provider.accepted}</Badge>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-muted-foreground block text-xs">Attendance</span>
+                        {provider.attendanceRate === 'N/A' ? (
+                          <span className="text-muted-foreground text-sm">N/A</span>
+                        ) : (
+                          <span className={`font-bold ${parseFloat(provider.attendanceRate) >= 90 ? 'text-green-600 dark:text-green-400' : parseFloat(provider.attendanceRate) >= 75 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {provider.attendanceRate}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 pt-2">
+                       <Link href={`/admin/providers/${provider.id}`}>
+                          <Button variant="outline" className="w-full h-8">View Details</Button>
+                       </Link>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow className="hover:bg-transparent border-border">
@@ -681,6 +750,7 @@ export default function ProvidersPage() {
                 )}
               </TableBody>
             </Table>
+            </div>
             <div className="p-4 border-t border-gray-100">
               {filteredProviders.length > 0 && (
                 <Pagination

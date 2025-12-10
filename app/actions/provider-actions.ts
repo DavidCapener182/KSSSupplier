@@ -29,7 +29,6 @@ export async function createProviderUser(data: CreateProviderData) {
               user_metadata: {
                 full_name: `${firstName || ''} ${lastName || ''}`.trim(),
                 company_name: companyName,
-                force_password_change: true,
               }
             });
 

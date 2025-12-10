@@ -108,7 +108,7 @@ export function Navbar() {
               <SheetHeader className="p-4 border-b">
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
-              <div className="p-4 flex-1 flex flex-col">
+              <div className="p-4 flex-1 flex flex-col min-h-0">
                 <nav className="space-y-1 flex-1 overflow-y-auto" role="navigation" aria-label="Mobile menu">
                   {navItems.map((item) => {
                     const Icon = item.icon;

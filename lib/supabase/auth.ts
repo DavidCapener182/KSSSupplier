@@ -33,12 +33,12 @@ export async function signIn(email: string, password: string): Promise<{ user: U
     // Only select the fields we need for faster query
     const queryPromise = supabase
       .from('users')
-      .select('role, force_password_change')
+      .select('role')
       .eq('id', data.user.id)
       .single();
     
     // Add timeout to fail fast (2 seconds)
-    const result = await withTimeout(queryPromise, 2000) as { data: { role: string; force_password_change: boolean } | null; error: any };
+    const result = await withTimeout(queryPromise, 2000) as { data: { role: string } | null; error: any };
     const { data: directUserData, error: directError } = result;
       
     if (!directError && directUserData) {
@@ -47,7 +47,6 @@ export async function signIn(email: string, password: string): Promise<{ user: U
           id: data.user.id,
           email: data.user.email!,
           role: directUserData.role as 'admin' | 'provider',
-          forcePasswordChange: (data.user.user_metadata as any)?.force_password_change === true || directUserData.force_password_change === true,
         },
         session: data.session,
       };
@@ -61,7 +60,6 @@ export async function signIn(email: string, password: string): Promise<{ user: U
           id: data.user.id,
           email: data.user.email!,
           role: 'admin',
-          forcePasswordChange: false,
         },
         session: data.session,
       };
@@ -77,7 +75,6 @@ export async function signIn(email: string, password: string): Promise<{ user: U
           id: data.user.id,
           email: data.user.email!,
           role: 'admin',
-          forcePasswordChange: false,
         },
         session: data.session,
       };
@@ -102,11 +99,11 @@ export async function getCurrentUser(): Promise<User | null> {
     // Skip RPC and use optimized direct query with timeout
     const queryPromise = supabase
       .from('users')
-      .select('role, force_password_change')
+      .select('role')
       .eq('id', user.id)
       .single();
     
-    const result = await withTimeout(queryPromise, 2000) as { data: { role: string; force_password_change: boolean } | null; error: any };
+    const result = await withTimeout(queryPromise, 2000) as { data: { role: string } | null; error: any };
     const { data: directUserData, error } = result;
     
     if (!error && directUserData) {
@@ -114,7 +111,6 @@ export async function getCurrentUser(): Promise<User | null> {
         id: user.id,
         email: user.email!,
         role: directUserData.role as 'admin' | 'provider',
-        forcePasswordChange: (user.user_metadata as any)?.force_password_change === true || directUserData.force_password_change === true,
       };
     }
 
@@ -125,7 +121,6 @@ export async function getCurrentUser(): Promise<User | null> {
         id: user.id,
         email: user.email!,
         role: 'admin',
-        forcePasswordChange: false,
       };
     }
 
@@ -138,7 +133,6 @@ export async function getCurrentUser(): Promise<User | null> {
         id: user.id,
         email: user.email!,
         role: 'admin',
-        forcePasswordChange: false,
       };
     }
     

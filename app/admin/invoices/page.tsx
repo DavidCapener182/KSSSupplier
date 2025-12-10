@@ -278,7 +278,7 @@ export default function InvoicesPage() {
         </Tooltip>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-none shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/20 dark:to-card h-full flex flex-col">
           <CardHeader className="pb-2 flex-1 flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -377,7 +377,93 @@ export default function InvoicesPage() {
               Showing {filteredInvoices.length} of {invoices.length} invoices
             </div>
           </div>
-          <Table>
+            <div className="block md:hidden space-y-4 p-4">
+              {paginatedInvoices.map((invoice) => {
+                const event = events.find((e) => e.id === invoice.event_id);
+                const provider = providers.find((p) => p.id === invoice.provider_id);
+                return (
+                  <Card 
+                    key={invoice.id} 
+                    className={`p-4 border shadow-sm ${invoice.status === 'purchase_order' ? 'cursor-pointer hover:bg-blue-50/30' : ''}`}
+                    onClick={invoice.status === 'purchase_order' ? () => handleViewPurchaseOrder(invoice) : undefined}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold">{event?.name || 'Unknown Event'}</p>
+                          <p className="text-sm text-muted-foreground">{provider?.company_name}</p>
+                        </div>
+                        {invoice.status === 'paid' ? (
+                          <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-transparent">Paid</Badge>
+                        ) : invoice.status === 'purchase_order' ? (
+                          <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-transparent">Purchase Order</Badge>
+                        ) : invoice.status === 'outstanding' ? (
+                          <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-transparent">Outstanding</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-transparent">Pending</Badge>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-sm pt-2 border-t">
+                        <div>
+                          <span className="text-muted-foreground block text-xs">Amount</span>
+                          <span className="font-semibold">{invoice.amount ? `£${invoice.amount.toFixed(2)}` : 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-xs">Submitted</span>
+                          <span>{invoice.created_at ? format(new Date(invoice.created_at), 'MMM dd, yyyy') : 'N/A'}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 pt-2">
+                        {invoice.status === 'purchase_order' ? (
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewPurchaseOrder(invoice);
+                              }}
+                            >
+                              View
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkAsPaid(invoice.id);
+                              }}
+                            >
+                              Mark Paid
+                            </Button>
+                          </div>
+                        ) : invoice.status === 'outstanding' || invoice.status === 'pending' ? (
+                          <Button 
+                            size="sm" 
+                            className="w-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkAsPaid(invoice.id);
+                            }}
+                          >
+                            Mark Paid
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" className="w-full">
+                            Download PDF
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
+            <Table>
             <TableHeader className="bg-muted/50">
               <TableRow className="hover:bg-transparent border-border">
                 <TableHead className="font-semibold text-foreground">Event</TableHead>
@@ -514,6 +600,7 @@ export default function InvoicesPage() {
               )}
             </TableBody>
           </Table>
+          </div>
           <div className="p-4 border-t border-gray-100">
             {filteredInvoices.length > 0 && (
               <Pagination

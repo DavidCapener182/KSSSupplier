@@ -263,8 +263,41 @@ export default function ProviderEventsPage() {
           </div>
           
           {filteredEvents.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
+            <>
+              <div className="block md:hidden space-y-4 p-4">
+                {filteredEvents.map(({ assignment, event }) => (
+                  <Card key={assignment.id} className="p-4 border shadow-sm">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <Link href={`/provider/events/${event.id}`} className="font-semibold text-lg text-foreground hover:text-primary transition-colors">
+                          {event.name}
+                        </Link>
+                        {getStatusBadge(assignment.status)}
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          {format(new Date(event.date), 'MMM dd, yyyy')}
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span className="truncate max-w-[250px]">{event.location}</span>
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t mt-2">
+                        <Link href={`/provider/events/${event.id}`}>
+                          <Button variant="outline" className="w-full">
+                            View Details <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow className="hover:bg-transparent border-border">
                     <TableHead className="font-semibold text-foreground">Event</TableHead>
@@ -341,6 +374,7 @@ export default function ProviderEventsPage() {
                 </TableBody>
               </Table>
             </div>
+            </>
           ) : (
             <div className="py-12">
               <EmptyState
@@ -365,9 +399,68 @@ export default function ProviderEventsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-muted/50">
+          {events.length > 0 ? (
+             <>
+               <div className="block md:hidden space-y-4 p-4">
+                 {events
+                    .slice()
+                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                    .map((event) => {
+                      const status = availabilityByEvent[event.id];
+                      return (
+                        <Card key={event.id} className="p-4 border shadow-sm">
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Calendar className="h-4 w-4" />
+                                  <span className="font-medium text-foreground">{format(new Date(event.date), 'MMM dd, yyyy')}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                                  <MapPin className="h-4 w-4" />
+                                  <span className="truncate max-w-[200px]">{event.location}</span>
+                                </div>
+                              </div>
+                              {status === 'available' && (
+                                <Badge variant="secondary" className="bg-green-100 text-green-700 border-transparent">Available</Badge>
+                              )}
+                              {status === 'unavailable' && (
+                                <Badge variant="secondary" className="bg-red-100 text-red-700 border-transparent">Unavailable</Badge>
+                              )}
+                              {!status && (
+                                <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-transparent">No response</Badge>
+                              )}
+                            </div>
+                            
+                            <div className="flex gap-2 pt-2 border-t">
+                              <Button
+                                variant={status === 'available' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => handleAvailability(event.id, 'available')}
+                                disabled={isUpdating !== null}
+                                className={`flex-1 ${status === 'available' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-background hover:bg-accent'}`}
+                              >
+                                Available
+                              </Button>
+                              <Button
+                                variant={status === 'unavailable' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => handleAvailability(event.id, 'unavailable')}
+                                disabled={isUpdating !== null}
+                                className={`flex-1 ${status === 'unavailable' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : 'bg-background hover:bg-accent'}`}
+                              >
+                                Unavailable
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+               </div>
+
+               <div className="hidden md:block overflow-x-auto">
+                 <Table>
+                   <TableHeader className="bg-muted/50">
                 <TableRow className="hover:bg-transparent border-border">
                   <TableHead className="font-semibold text-foreground">Date</TableHead>
                   <TableHead className="font-semibold text-foreground">Location</TableHead>
@@ -448,6 +541,16 @@ export default function ProviderEventsPage() {
               </TableBody>
             </Table>
           </div>
+          </>
+        ) : (
+          <div className="py-8 text-center">
+            <EmptyState
+              icon={Calendar}
+              title="No events available"
+              description="There are no events yet."
+            />
+          </div>
+        )}
         </CardContent>
       </Card>
     </div>
