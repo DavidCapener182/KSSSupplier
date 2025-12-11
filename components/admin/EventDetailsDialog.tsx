@@ -371,7 +371,7 @@ export function EventDetailsDialog({
           {/* Action Button */}
           <div className="flex justify-end">
             <Link href={`/admin/events/${event.id}`}>
-              <Button>
+              <Button variant="shiny">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 View Full Event Details
               </Button>

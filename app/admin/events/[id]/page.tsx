@@ -1466,7 +1466,7 @@ export default function EventDetailPage() {
                 </div>
                 <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button variant="shiny">
                       <Plus className="h-4 w-4 mr-2" />
                       Assign Provider
                     </Button>

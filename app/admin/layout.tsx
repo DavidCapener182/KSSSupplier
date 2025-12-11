@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Navbar } from '@/components/shared/Navbar';
 import { Sidebar } from '@/components/shared/Sidebar';
+import { CommandMenu } from '@/components/shared/CommandMenu';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useDataStore } from '@/lib/data-store';
 
@@ -51,6 +52,7 @@ export default function AdminLayout({
         <Sidebar />
         <main className="flex-1 p-4 md:p-6 w-full overflow-x-auto overflow-y-auto h-[calc(100vh-64px)] md:ml-0">{children}</main>
       </div>
+      <CommandMenu />
     </div>
   );
 }

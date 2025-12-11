@@ -162,7 +162,7 @@ export function AIProviderRecommendations({ eventId, onAssign }: AIProviderRecom
                     </div>
                   </div>
                 </div>
-                <Button size="sm" onClick={() => onAssign(rec.providerId)}>
+                <Button variant="shiny" size="sm" onClick={() => onAssign(rec.providerId)}>
                   Assign
                 </Button>
               </div>

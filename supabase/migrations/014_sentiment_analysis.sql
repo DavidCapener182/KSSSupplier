@@ -47,3 +47,4 @@ CREATE POLICY "Admins can do everything on provider_sentiment_trends"
 
 -- Providers can read their own trends? Maybe not needed for V1, keeping it internal tool.
 
+

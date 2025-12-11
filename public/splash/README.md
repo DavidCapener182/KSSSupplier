@@ -36,3 +36,4 @@ All 10 splash screen sizes are automatically generated:
 ## Customization
 
 To modify the splash screen design, edit `scripts/generate-splash-screens.js` and run `npm run generate-splash` again.
+

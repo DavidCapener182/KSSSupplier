@@ -143,3 +143,4 @@ main().catch((error) => {
   console.error('❌ Error generating splash screens:', error);
   process.exit(1);
 });
+

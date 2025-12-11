@@ -128,3 +128,4 @@ export function WeatherAttendancePrediction({ eventId }: WeatherAttendancePredic
   );
 }
 
+

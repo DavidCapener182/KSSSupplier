@@ -11,3 +11,4 @@ Please add these files to the parent directory (`public/`):
 
 1. `apple-touch-icon.png` (180x180 px, PNG) - For iPhone/iPad Home Screen
 2. `favicon.ico` (32x32 px, ICO) - For Browser Tab Bar
+

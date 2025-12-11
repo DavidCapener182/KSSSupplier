@@ -27,12 +27,21 @@ import {
   BarChart3,
   HelpCircle,
   Search,
+  ChevronDown,
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
 import { Separator } from '@/components/ui/separator';
 import { useDataStore } from '@/lib/data-store';
 import { useMessageNotifications } from '@/hooks/use-message-notifications';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const adminNavItems = [
   { title: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -95,7 +104,7 @@ export function Navbar() {
   });
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-800 bg-[#2C2C2C] text-white shadow-md" role="navigation" aria-label="Main navigation">
+    <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#2C2C2C]/80 backdrop-blur-md text-white shadow-sm" role="navigation" aria-label="Main navigation">
       <div className="w-full px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -186,35 +195,44 @@ export function Navbar() {
               <div className="text-white/90 hover:text-white transition-colors">
                 <NotificationCenter />
               </div>
-              <div className="hidden sm:flex items-center space-x-3 text-sm text-gray-300 border-l border-gray-700 pl-4">
-                <div className="flex items-center gap-2">
-                  <div className="bg-white/10 p-1 rounded-full">
-                    <User className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="flex flex-col leading-tight">
-                    <span className="hidden md:inline font-medium text-white">{user.email}</span>
-                    <span className="text-xs text-primary font-semibold capitalize">
-                      {user.role}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <Link href={user.role === 'admin' ? '/admin/settings' : '/provider/settings'} className="hidden md:block">
-                <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 text-xs md:text-sm" aria-label="Settings">
-                  <Settings className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Settings</span>
-                </Button>
-              </Link>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => logout()} 
-                className="hidden md:flex text-white/80 hover:text-white hover:bg-white/10 text-xs md:text-sm" 
-                aria-label="Logout"
-              >
-                <LogOut className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Logout</span>
-              </Button>
+
+              {/* User Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="pl-0 hover:bg-transparent text-left h-auto py-1">
+                    <div className="flex items-center gap-3 pl-4 border-l border-white/10">
+                      <div className="bg-rose-500/20 p-1.5 rounded-full ring-1 ring-rose-500/50">
+                        <User className="h-4 w-4 text-rose-500" />
+                      </div>
+                      <div className="hidden md:flex flex-col leading-tight">
+                        <span className="font-medium text-sm text-white">{user.email}</span>
+                        <span className="text-[10px] text-white/50 uppercase tracking-wider font-semibold">
+                          {user.role}
+                        </span>
+                      </div>
+                      <ChevronDown className="h-3 w-3 text-white/50 ml-1" />
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                
+                <DropdownMenuContent align="end" className="w-56 bg-[#2C2C2C] border-white/10 text-white">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <Link href={user.role === 'admin' ? '/admin/settings' : '/provider/settings'}>
+                    <DropdownMenuItem className="focus:bg-rose-500 focus:text-white cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuItem 
+                    className="focus:bg-rose-500 focus:text-white cursor-pointer"
+                    onClick={() => logout()}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           )}
         </div>

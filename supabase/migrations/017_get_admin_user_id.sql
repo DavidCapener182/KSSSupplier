@@ -5,3 +5,4 @@ RETURNS UUID AS $$
   SELECT id FROM public.users WHERE role = 'admin' LIMIT 1;
 $$ LANGUAGE sql SECURITY DEFINER;
 
+

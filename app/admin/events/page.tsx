@@ -301,7 +301,7 @@ export default function EventsPage() {
             <TooltipContent>Export CSV</TooltipContent>
           </Tooltip>
           <Link href="/admin/events/new">
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
+            <Button variant="shiny">
               <Plus className="h-4 w-4 mr-2" />
               Create Event
             </Button>

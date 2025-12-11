@@ -53,3 +53,4 @@ CREATE POLICY "Providers can view relevant double booking alerts"
 CREATE TRIGGER update_double_booking_alerts_updated_at BEFORE UPDATE ON public.double_booking_alerts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+

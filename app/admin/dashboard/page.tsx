@@ -363,9 +363,16 @@ export default function AdminDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent className="relative z-10 flex-1 flex flex-col justify-between">
-                  <div className="text-3xl font-bold text-foreground">{totalEvents}</div>
+                  <div className="flex items-end gap-2">
+                    <div className="text-3xl font-bold text-foreground">{totalEvents}</div>
+                    {/* Trend Badge */}
+                    <div className="flex items-center text-xs font-medium text-emerald-400 mb-1.5 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                      <ArrowUpRight className="h-3 w-3 mr-0.5" />
+                      <span>12%</span>
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1 flex items-center">
-                    <span className="text-blue-600 dark:text-blue-400 font-medium mr-1">2026</span> season
+                    <span className="text-rose-500 font-medium mr-1">2026</span> season active
                   </p>
                 </CardContent>
               </Card>
@@ -380,7 +387,14 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="relative z-10 flex-1 flex flex-col justify-between">
-                <div className="text-3xl font-bold text-foreground">{pendingConfirmations}</div>
+                <div className="flex items-end gap-2">
+                  <div className="text-3xl font-bold text-foreground">{pendingConfirmations}</div>
+                  {/* Trend Badge */}
+                  <div className="flex items-center text-xs font-medium text-emerald-400 mb-1.5 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                    <ArrowUpRight className="h-3 w-3 mr-0.5" />
+                    <span>12%</span>
+                  </div>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Awaiting provider response
                 </p>
@@ -396,7 +410,14 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="relative z-10 flex-1 flex flex-col justify-between">
-                <div className="text-3xl font-bold text-foreground">{confirmedAssignments}</div>
+                <div className="flex items-end gap-2">
+                  <div className="text-3xl font-bold text-foreground">{confirmedAssignments}</div>
+                  {/* Trend Badge */}
+                  <div className="flex items-center text-xs font-medium text-emerald-400 mb-1.5 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                    <ArrowUpRight className="h-3 w-3 mr-0.5" />
+                    <span>12%</span>
+                  </div>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Accepted assignments
                 </p>
@@ -413,7 +434,14 @@ export default function AdminDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent className="relative z-10 flex-1 flex flex-col justify-between">
-                  <div className="text-3xl font-bold text-foreground">{totalProviders}</div>
+                  <div className="flex items-end gap-2">
+                    <div className="text-3xl font-bold text-foreground">{totalProviders}</div>
+                    {/* Trend Badge */}
+                    <div className="flex items-center text-xs font-medium text-emerald-400 mb-1.5 bg-emerald-400/10 px-1.5 py-0.5 rounded">
+                      <ArrowUpRight className="h-3 w-3 mr-0.5" />
+                      <span>12%</span>
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Active partners
                   </p>
