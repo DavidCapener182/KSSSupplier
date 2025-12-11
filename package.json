@@ -30,6 +30,7 @@
     "clsx": "^2.1.0",
     "cmdk": "^1.1.1",
     "date-fns": "^3.0.6",
+    "framer-motion": "^12.23.26",
     "html5-qrcode": "^2.3.8",
     "ical-generator": "^8.0.0",
     "lucide-react": "^0.309.0",

@@ -28,6 +28,7 @@ import {
   HelpCircle,
   Search,
   ChevronDown,
+  Presentation,
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationCenter } from './NotificationCenter';
@@ -57,6 +58,7 @@ const adminNavItems = [
   { title: 'Calendar', href: '/admin/calendar', icon: CalendarDays },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
   { title: 'Help', href: '/admin/help', icon: HelpCircle },
+  { title: 'Pitch Deck', href: '/admin/pitch', icon: Presentation },
 ];
 
 const providerNavItems = [

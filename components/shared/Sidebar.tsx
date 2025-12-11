@@ -18,6 +18,7 @@ import {
   HelpCircle,
   Search,
   LogOut,
+  Presentation,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useDataStore } from '@/lib/data-store';
@@ -45,6 +46,7 @@ const adminNavItems: NavItem[] = [
   { title: 'Calendar', href: '/admin/calendar', icon: CalendarDays },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
   { title: 'Help', href: '/admin/help', icon: HelpCircle },
+  { title: 'Pitch Deck', href: '/admin/pitch', icon: Presentation },
 ];
 
 const providerNavItems: NavItem[] = [
